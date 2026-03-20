@@ -1,0 +1,10 @@
+-r base.txt
+
+# Production server
+uvicorn==0.27.1
+
+# Sentry for error tracking
+sentry-sdk==1.40.4
+
+# Security
+django-ratelimit==4.1.0

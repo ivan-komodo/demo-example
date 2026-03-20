@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="LMS System - Система управления обучением">
+    <title>LMS System</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="container">
+                <div class="header-content">
+                    <a href="/" class="logo">
+                        <h1>LMS System</h1>
+                    </a>
+                    <nav class="nav" id="nav">
+                        <a href="/" class="nav-link">Главная</a>
+                        <a href="/courses.html" class="nav-link">Курсы</a>
+                        <a href="/progress.html" class="nav-link" id="progress-link" style="display: none;">Прогресс</a>
+                        <a href="/bookings.html" class="nav-link" id="bookings-link" style="display: none;">Бронирование</a>
+                    </nav>
+                    <div class="auth-buttons" id="auth-buttons">
+                        <a href="/login.html" class="btn btn-outline">Войти</a>
+                        <a href="/register.html" class="btn btn-primary">Регистрация</a>
+                    </div>
+                    <div class="user-menu" id="user-menu" style="display: none;">
+                        <span id="user-name"></span>
+                        <button class="btn btn-outline" onclick="logout()">Выйти</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main">
+            <div class="container">
+                <section class="hero">
+                    <h2>Добро пожаловать в систему управления обучением</h2>
+                    <p>Эффективное обучение для вашей команды</p>
+                    <a href="/courses.html" class="btn btn-primary btn-lg">Начать обучение</a>
+                </section>
+
+                <section class="features">
+                    <div class="feature-card">
+                        <h3>📚 Курсы</h3>
+                        <p>Управляйте курсами и модулями</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>📝 Тесты</h3>
+                        <p>Проверяйте знания с помощью тестов</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>📊 Прогресс</h3>
+                        <p>Отслеживайте прогресс обучения</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>📅 Бронирование</h3>
+                        <p>Бронируйте аудитории и тренеров</p>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="container">
+                <p>&copy; 2026 LMS System. Все права защищены.</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
