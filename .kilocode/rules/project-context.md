@@ -41,13 +41,13 @@
 
 | Компонент | Технология | Версия/Детали |
 |-----------|------------|---------------|
-| **Backend** | Python + Django + Django REST Framework | Django 4.x, DRF 3.x |
+| **Backend** | Python + Django + Django REST Framework | Python 3.14, Django 6.0.3, DRF 3.17.0 |
 | **Frontend** | HTML, Plain JavaScript | Без фреймворков |
-| **Основная БД** | PostgreSQL | 14+ |
+| **Основная БД** | PostgreSQL | 15.x |
 | **Аналитическая БД** | ClickHouse | v2 (будущее) |
-| **Кэш** | Redis | Для сессий и кэширования |
+| **Кэш** | Redis | 7.3.0 |
 | **Хранилище файлов** | S3 или локальное | Для PDF, видео |
-| **Аутентификация** | JWT + refresh token | bcrypt для хеширования |
+| **Аутентификация** | JWT + refresh token | bcrypt 5.0.0, simplejwt 5.5.1 |
 | **Логирование** | Sentry + структурированное логирование | |
 | **Хостинг** | Docker + Nginx | Локально или в облаке |
 

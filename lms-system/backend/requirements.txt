@@ -1,1 +1,39 @@
--r requirements/base.txt
+# Django and DRF
+Django==6.0.3
+djangorestframework==3.17.0
+djangorestframework-simplejwt==5.5.1
+
+# Authentication
+bcrypt==5.0.0
+
+# Database
+psycopg2-binary==2.9.11
+
+# Redis and caching
+redis==7.3.0
+django-redis==6.0.0
+
+# Server
+gunicorn==25.1.0
+
+# Environment
+python-dotenv==1.2.2
+
+# CORS
+django-cors-headers==4.9.0
+
+# API Documentation
+drf-spectacular==0.29.0
+
+# Filtering
+django-filter==25.2
+
+# Images
+Pillow==12.1.1
+
+# File storage (local by default, S3 optional)
+django-storages==1.14.6
+boto3==1.42.73
+
+# Debug (for development)
+django-debug-toolbar==6.2.0

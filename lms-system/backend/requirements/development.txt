@@ -1,21 +1,21 @@
 -r base.txt
 
 # Testing
-pytest==8.0.0
-pytest-django==4.8.0
-pytest-cov==4.1.0
-factory-boy==3.3.0
+pytest==8.3.5
+pytest-django==4.10.0
+pytest-cov==6.1.1
+factory-boy==3.3.3
 
 # Code quality
-black==24.1.1
-isort==5.13.2
-flake8==7.0.0
-mypy==1.8.0
-django-stubs==4.2.7
-djangorestframework-stubs==3.14.5
+black==25.1.0
+isort==6.0.1
+flake8==7.2.0
+mypy==1.15.0
+django-stubs==5.2.0
+djangorestframework-stubs==3.16.0
 
 # Git hooks
-pre-commit==3.6.1
+pre-commit==4.2.0
 
 # Debug
-django-debug-toolbar==4.3.0
+django-debug-toolbar==6.2.0

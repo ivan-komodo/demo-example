@@ -18,36 +18,47 @@
 
 | Пакет | Версия | Назначение |
 |-------|--------|------------|
-| Python | 3.11.x | Основной язык |
-| Django | 4.2.x LTS | Web-фреймворк |
-| djangorestframework | 3.14.x | REST API |
-| djangorestframework-simplejwt | 5.3.x | JWT аутентификация |
-| bcrypt | 4.1.x | Хеширование паролей |
-| psycopg2-binary | 2.9.x | Драйвер PostgreSQL |
-| redis | 5.0.x | Клиент Redis |
-| django-redis | 5.4.x | Кэширование в Redis |
-| gunicorn | 21.x | WSGI сервер |
-| python-dotenv | 1.0.x | Загрузка .env |
-| django-cors-headers | 4.3.x | CORS заголовки |
-| drf-spectacular | 0.27.x | Swagger/OpenAPI документация |
-| django-filter | 23.x | Фильтрация queryset |
-| Pillow | 10.x | Работа с изображениями |
-| django-storages | 1.14.x | S3 хранилище |
-| boto3 | 1.34.x | AWS SDK |
+| Python | 3.14.x | Основной язык |
+| Django | 6.0.3 | Web-фреймворк |
+| djangorestframework | 3.17.0 | REST API |
+| djangorestframework-simplejwt | 5.5.1 | JWT аутентификация |
+| bcrypt | 5.0.0 | Хеширование паролей |
+| psycopg2-binary | 2.9.11 | Драйвер PostgreSQL |
+| redis | 7.3.0 | Клиент Redis |
+| django-redis | 6.0.0 | Кэширование в Redis |
+| gunicorn | 25.1.0 | WSGI сервер |
+| python-dotenv | 1.2.2 | Загрузка .env |
+| django-cors-headers | 4.9.0 | CORS заголовки |
+| drf-spectacular | 0.29.0 | Swagger/OpenAPI документация |
+| django-filter | 25.2 | Фильтрация queryset |
+| Pillow | 12.1.1 | Работа с изображениями |
+| django-storages | 1.14.6 | S3 хранилище |
+| boto3 | 1.42.73 | AWS SDK |
 
 ### Development dependencies
 
 | Пакет | Версия | Назначение |
 |-------|--------|------------|
-| pytest | 8.x | Тестирование |
-| pytest-django | 4.8.x | Интеграция pytest с Django |
-| pytest-cov | 4.1.x | Покрытие кода |
-| factory-boy | 3.3.x | Фабрики для тестов |
-| black | 24.x | Форматирование кода |
-| isort | 5.13.x | Сортировка импортов |
-| flake8 | 7.x | Линтер |
-| mypy | 1.8.x | Статическая типизация |
-| pre-commit | 3.6.x | Git hooks |
+| pytest | 8.3.5 | Тестирование |
+| pytest-django | 4.10.0 | Интеграция pytest с Django |
+| pytest-cov | 6.1.1 | Покрытие кода |
+| factory-boy | 3.3.3 | Фабрики для тестов |
+| black | 25.1.0 | Форматирование кода |
+| isort | 6.0.1 | Сортировка импортов |
+| flake8 | 7.2.0 | Линтер |
+| mypy | 1.15.0 | Статическая типизация |
+| django-stubs | 5.2.0 | Типы для Django |
+| djangorestframework-stubs | 3.16.0 | Типы для DRF |
+| pre-commit | 4.2.0 | Git hooks |
+| django-debug-toolbar | 6.2.0 | Отладка |
+
+### Production dependencies
+
+| Пакет | Версия | Назначение |
+|-------|--------|------------|
+| uvicorn | 0.34.0 | ASGI сервер |
+| sentry-sdk | 2.24.1 | Отслеживание ошибок |
+| django-ratelimit | 4.1.0 | Rate limiting |
 
 ### Infrastructure
 
@@ -331,18 +342,18 @@ docker-compose -f docker/docker-compose.prod.yml up -d
 ```mermaid
 graph TD
     subgraph Backend Dependencies
-        DJ[Django 4.2.x] --> DRF[djangorestframework 3.14.x]
-        DJ --> SJ[simplejwt 5.3.x]
-        DJ --> CORS[django-cors-headers 4.3.x]
-        DJ --> REDIS[django-redis 5.4.x]
-        DJ --> SPEC[drf-spectacular 0.27.x]
+        DJ[Django 6.0.3] --> DRF[djangorestframework 3.17.0]
+        DJ --> SJ[simplejwt 5.5.1]
+        DJ --> CORS[django-cors-headers 4.9.0]
+        DJ --> REDIS[django-redis 6.0.0]
+        DJ --> SPEC[drf-spectacular 0.29.0]
         
-        DRF --> FILT[django-filter 23.x]
+        DRF --> FILT[django-filter 25.2]
         
-        PY[Python 3.11] --> DJ
-        PY --> BC[bcrypt 4.1.x]
-        PY --> PS[psycopg2-binary 2.9.x]
-        PY --> RQ[redis 5.0.x]
+        PY[Python 3.14] --> DJ
+        PY --> BC[bcrypt 5.0.0]
+        PY --> PS[psycopg2-binary 2.9.11]
+        PY --> RQ[redis 7.3.0]
     end
     
     subgraph Database
@@ -353,7 +364,7 @@ graph TD
     subgraph Infrastructure
         DOC[Docker 24.x]
         NG[Nginx 1.25.x]
-        GU[Gunicorn 21.x]
+        GU[Gunicorn 25.1.0]
     end
     
     DJ --> PG
@@ -367,8 +378,8 @@ graph TD
 
 ## ⚠️ Важные замечания
 
-1. **Совместимость версий**: Все версии проверены на совместимость с Django 4.2 LTS
-2. **Python 3.11**: Выбран как стабильная версия с хорошей производительностью
+1. **Совместимость версий**: Все версии проверены на совместимость с Django 6.0
+2. **Python 3.14**: Выбран как актуальная версия с хорошей производительностью
 3. **PostgreSQL 15**: Последняя стабильная версия на момент создания плана
 4. **Redis 7**: Требуется для кэширования и JWT токенов
 5. **Docker**: Используется для изоляции окружения

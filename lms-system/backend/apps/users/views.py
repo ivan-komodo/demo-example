@@ -154,6 +154,27 @@ def register_view(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def logout_view(request):
+    """
+    Logout view for user logout.
+    
+    Blacklists the refresh token.
+    """
+    try:
+        refresh_token = request.data.get('refresh')
+        if refresh_token:
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+        return Response({'message': 'Успешный выход из системы.'})
+    except Exception:
+        return Response(
+            {'error': 'Неверный токен.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+
+@api_view(['POST'])
 @permission_classes([AllowAny])
 def password_reset_request_view(request):
     """

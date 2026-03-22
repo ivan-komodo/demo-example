@@ -1,10 +1,10 @@
 -r base.txt
 
 # Production server
-uvicorn==0.27.1
+uvicorn==0.34.0
 
 # Sentry for error tracking
-sentry-sdk==1.40.4
+sentry-sdk==2.24.1
 
 # Security
 django-ratelimit==4.1.0
