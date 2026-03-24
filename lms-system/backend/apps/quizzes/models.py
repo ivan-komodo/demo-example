@@ -9,6 +9,18 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 
+# === CHUNK: QUIZ_MODELS_V1 [QUIZZES] ===
+# Описание: Модели для тестов, вариантов ответов, попыток и ответов.
+# Dependencies: COURSE_MODELS_V1
+
+
+# [START_QUIZ_MODEL]
+# ANCHOR: QUIZ_MODEL
+# @PreConditions:
+# - нет нетривиальных предусловий
+# @PostConditions:
+# - создаёт модель Quiz с полями module, question, question_type, order_num
+# PURPOSE: Модель вопроса теста, привязанного к модулю.
 class Quiz(models.Model):
     """
     Model for quiz questions.
@@ -42,9 +54,25 @@ class Quiz(models.Model):
         verbose_name_plural = _('Тесты')
         ordering = ['order_num', 'created_at']
     
+    # [START_QUIZ_STR]
+    # ANCHOR: QUIZ_STR
+    # @PreConditions:
+    # - экземпляр Quiz существует
+    # @PostConditions:
+    # - возвращает строковое представление вопроса
+    # PURPOSE: Строковое представление вопроса теста.
     def __str__(self):
         return f'{self.module.title} - {self.question[:50]}...'
+    # [END_QUIZ_STR]
     
+    # [START_QUIZ_SAVE]
+    # ANCHOR: QUIZ_SAVE
+    # @PreConditions:
+    # - экземпляр Quiz инициализирован
+    # @PostConditions:
+    # - при отсутствии order_num устанавливает следующий по порядку
+    # - экземпляр сохранён в БД
+    # PURPOSE: Автоматическая установка порядкового номера при сохранении.
     def save(self, *args, **kwargs):
         """Auto-set order_num if not provided."""
         if not self.order_num:
@@ -53,8 +81,19 @@ class Quiz(models.Model):
             )['max_order']
             self.order_num = (max_order or 0) + 1
         super().save(*args, **kwargs)
+    # [END_QUIZ_SAVE]
 
 
+# [END_QUIZ_MODEL]
+
+
+# [START_QUIZ_OPTION_MODEL]
+# ANCHOR: QUIZ_OPTION_MODEL
+# @PreConditions:
+# - нет нетривиальных предусловий
+# @PostConditions:
+# - создаёт модель QuizOption с полями quiz, text, is_correct, order_num
+# PURPOSE: Модель варианта ответа на вопрос теста.
 class QuizOption(models.Model):
     """
     Model for quiz answer options.
@@ -77,10 +116,28 @@ class QuizOption(models.Model):
         verbose_name_plural = _('Варианты ответов')
         ordering = ['order_num', 'id']
     
+    # [START_QUIZ_OPTION_STR]
+    # ANCHOR: QUIZ_OPTION_STR
+    # @PreConditions:
+    # - экземпляр QuizOption существует
+    # @PostConditions:
+    # - возвращает строковое представление варианта ответа
+    # PURPOSE: Строковое представление варианта ответа.
     def __str__(self):
         return f'{self.quiz.question[:30]}... - {self.text[:30]}...'
+    # [END_QUIZ_OPTION_STR]
 
 
+# [END_QUIZ_OPTION_MODEL]
+
+
+# [START_QUIZ_ATTEMPT_MODEL]
+# ANCHOR: QUIZ_ATTEMPT_MODEL
+# @PreConditions:
+# - нет нетривиальных предусловий
+# @PostConditions:
+# - создаёт модель QuizAttempt с полями user, quiz, attempt_number, score
+# PURPOSE: Модель попытки прохождения теста пользователем.
 class QuizAttempt(models.Model):
     """
     Model for quiz attempts.
@@ -118,9 +175,25 @@ class QuizAttempt(models.Model):
         ordering = ['-completed_at']
         unique_together = ['user', 'quiz', 'attempt_number']
     
+    # [START_QUIZ_ATTEMPT_STR]
+    # ANCHOR: QUIZ_ATTEMPT_STR
+    # @PreConditions:
+    # - экземпляр QuizAttempt существует
+    # @PostConditions:
+    # - возвращает строковое представление попытки
+    # PURPOSE: Строковое представление попытки теста.
     def __str__(self):
         return f'{self.user.email} - {self.quiz.question[:30]}... (попытка {self.attempt_number})'
+    # [END_QUIZ_ATTEMPT_STR]
     
+    # [START_GET_NEXT_ATTEMPT_NUMBER]
+    # ANCHOR: GET_NEXT_ATTEMPT_NUMBER
+    # @PreConditions:
+    # - user — валидный пользователь
+    # - quiz — валидный вопрос теста
+    # @PostConditions:
+    # - возвращает номер следующей попытки (int)
+    # PURPOSE: Получение номера следующей попытки для пользователя и теста.
     @classmethod
     def get_next_attempt_number(cls, user, quiz):
         """Get the next attempt number for a user and quiz."""
@@ -130,14 +203,35 @@ class QuizAttempt(models.Model):
         ).order_by('-attempt_number').first()
         
         return (last_attempt.attempt_number + 1) if last_attempt else 1
+    # [END_GET_NEXT_ATTEMPT_NUMBER]
     
+    # [START_CAN_ATTEMPT]
+    # ANCHOR: CAN_ATTEMPT
+    # @PreConditions:
+    # - user — валидный пользователь
+    # - quiz — валидный вопрос теста
+    # @PostConditions:
+    # - возвращает True, если пользователь может попытаться пройти тест
+    # - возвращает False, если достигнут лимит попыток
+    # PURPOSE: Проверка возможности новой попытки прохождения теста.
     @classmethod
     def can_attempt(cls, user, quiz):
         """Check if user can attempt the quiz."""
         attempt_count = cls.objects.filter(user=user, quiz=quiz).count()
         return attempt_count < cls.MAX_ATTEMPTS
+    # [END_CAN_ATTEMPT]
 
 
+# [END_QUIZ_ATTEMPT_MODEL]
+
+
+# [START_QUIZ_ANSWER_MODEL]
+# ANCHOR: QUIZ_ANSWER_MODEL
+# @PreConditions:
+# - нет нетривиальных предусловий
+# @PostConditions:
+# - создаёт модель QuizAnswer с полями attempt, quiz_option, text, is_correct
+# PURPOSE: Модель ответа пользователя на вопрос теста.
 class QuizAnswer(models.Model):
     """
     Model for quiz answers.
@@ -168,5 +262,19 @@ class QuizAnswer(models.Model):
         verbose_name_plural = _('Ответы на тесты')
         ordering = ['created_at']
     
+    # [START_QUIZ_ANSWER_STR]
+    # ANCHOR: QUIZ_ANSWER_STR
+    # @PreConditions:
+    # - экземпляр QuizAnswer существует
+    # @PostConditions:
+    # - возвращает строковое представление ответа
+    # PURPOSE: Строковое представление ответа на тест.
     def __str__(self):
         return f'{self.attempt} - {self.text[:30] if self.text else self.quiz_option.text[:30]}...'
+    # [END_QUIZ_ANSWER_STR]
+
+
+# [END_QUIZ_ANSWER_MODEL]
+
+
+# === END_CHUNK: QUIZ_MODELS_V1 ===

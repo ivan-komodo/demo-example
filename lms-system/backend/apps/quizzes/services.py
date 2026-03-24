@@ -9,9 +9,29 @@ from .models import Quiz, QuizAnswer, QuizAttempt
 User = get_user_model()
 
 
+# === CHUNK: QUIZ_SERVICES_V1 [QUIZZES] ===
+# Описание: Сервисные функции для расчёта результатов тестов.
+# Dependencies: QUIZ_MODELS_V1
+
+
+# [START_QUIZ_SERVICE]
+# ANCHOR: QUIZ_SERVICE
+# @PreConditions:
+# - нет нетривиальных предусловий для класса
+# @PostConditions:
+# - предоставляет методы для расчёта результатов тестов
+# PURPOSE: Сервис для управления результатами тестов.
 class QuizService:
     """Service for quiz management."""
     
+    # [START_CALCULATE_SCORE]
+    # ANCHOR: CALCULATE_SCORE
+    # @PreConditions:
+    # - attempt — валидный экземпляр QuizAttempt
+    # @PostConditions:
+    # - для открытых вопросов возвращает None (требуется ручная проверка)
+    # - для тестов возвращает Decimal — процент правильных ответов
+    # PURPOSE: Расчёт результата попытки прохождения теста.
     @staticmethod
     def calculate_score(attempt: QuizAttempt) -> Decimal:
         """Calculate score for a quiz attempt."""
@@ -30,7 +50,17 @@ class QuizService:
         
         score = Decimal(str((correct_answers / total_options) * 100))
         return score
+    # [END_CALCULATE_SCORE]
     
+    # [START_GET_BEST_SCORE]
+    # ANCHOR: GET_BEST_SCORE
+    # @PreConditions:
+    # - user — валидный пользователь
+    # - quiz — валидный вопрос теста
+    # @PostConditions:
+    # - возвращает лучший результат среди всех попыток
+    # - возвращает None, если попыток не было
+    # PURPOSE: Получение лучшего результата пользователя по тесту.
     @staticmethod
     def get_best_score(user: User, quiz: Quiz) -> Decimal:
         """Get best score for a user on a quiz."""
@@ -39,3 +69,10 @@ class QuizService:
             return None
         
         return max(a.score for a in attempts if a.score is not None)
+    # [END_GET_BEST_SCORE]
+
+
+# [END_QUIZ_SERVICE]
+
+
+# === END_CHUNK: QUIZ_SERVICES_V1 ===

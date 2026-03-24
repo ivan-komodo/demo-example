@@ -27,6 +27,9 @@ from .serializers import (
 User = get_user_model()
 
 
+# === CHUNK: USER_VIEWSET_V1 [USER_MANAGEMENT] ===
+# Описание: ViewSet для CRUD операций над пользователями.
+# Dependencies: USER_MODEL_V1, USER_SERIALIZERS_V1
 class UserViewSet(viewsets.ModelViewSet):
     """
     ViewSet for User model.
@@ -39,6 +42,15 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
     
+    # [START_GET_SERIALIZER_CLASS]
+    # ANCHOR: GET_SERIALIZER_CLASS
+    # @PreConditions:
+    # - нет нетривиальных предусловий
+    # @PostConditions:
+    # - для create возвращает UserCreateSerializer
+    # - для update/partial_update возвращает UserUpdateSerializer
+    # - для остальных действий возвращает UserSerializer
+    # PURPOSE: Выбор подходящего сериализатора в зависимости от действия.
     def get_serializer_class(self):
         """Return appropriate serializer based on action."""
         if self.action == 'create':
@@ -46,20 +58,47 @@ class UserViewSet(viewsets.ModelViewSet):
         elif self.action in ['update', 'partial_update']:
             return UserUpdateSerializer
         return UserSerializer
+    # [END_GET_SERIALIZER_CLASS]
     
+    # [START_GET_QUERYSET]
+    # ANCHOR: GET_QUERYSET
+    # @PreConditions:
+    # - пользователь аутентифицирован
+    # @PostConditions:
+    # - для admin возвращает всех пользователей
+    # - для остальных возвращает только собственную запись
+    # PURPOSE: Фильтрация queryset в зависимости от роли пользователя.
     def get_queryset(self):
         """Filter queryset based on user role."""
         user = self.request.user
         if user.is_admin:
             return User.objects.all()
         return User.objects.filter(id=user.id)
+    # [END_GET_QUERYSET]
     
+    # [START_ME_ACTION]
+    # ANCHOR: ME_ACTION
+    # @PreConditions:
+    # - пользователь аутентифицирован
+    # @PostConditions:
+    # - возвращает данные текущего пользователя
+    # PURPOSE: Получение профиля текущего аутентифицированного пользователя.
     @action(detail=False, methods=['get'])
     def me(self, request):
         """Return current user profile."""
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
+    # [END_ME_ACTION]
     
+    # [START_CHANGE_PASSWORD_ACTION]
+    # ANCHOR: CHANGE_PASSWORD_ACTION
+    # @PreConditions:
+    # - пользователь аутентифицирован
+    # - request.data содержит old_password и new_password
+    # @PostConditions:
+    # - при успехе пароль пользователя изменён
+    # - возвращает сообщение об успехе
+    # PURPOSE: Смена пароля текущего пользователя.
     @action(detail=False, methods=['post'])
     def change_password(self, request):
         """Change current user password."""
@@ -74,7 +113,17 @@ class UserViewSet(viewsets.ModelViewSet):
         user.save()
         
         return Response({'message': 'Пароль успешно изменён.'})
+    # [END_CHANGE_PASSWORD_ACTION]
     
+    # [START_LOGOUT_ACTION]
+    # ANCHOR: LOGOUT_ACTION
+    # @PreConditions:
+    # - пользователь аутентифицирован
+    # - request.data может содержать refresh токен
+    # @PostConditions:
+    # - при наличии refresh токена он добавляется в blacklist
+    # - возвращает сообщение об успехе или ошибку
+    # PURPOSE: Выход из системы с отзывом refresh токена.
     @action(detail=False, methods=['post'])
     def logout(self, request):
         """Logout user by blacklisting refresh token."""
@@ -89,8 +138,20 @@ class UserViewSet(viewsets.ModelViewSet):
                 {'error': 'Неверный токен.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+    # [END_LOGOUT_ACTION]
 
 
+# === END_CHUNK: USER_VIEWSET_V1 ===
+
+
+# [START_LOGIN_VIEW]
+# ANCHOR: LOGIN_VIEW
+# @PreConditions:
+# - request.data содержит email и password
+# @PostConditions:
+# - при успехе возвращает access, refresh токены и данные пользователя
+# - при неудаче возвращает ошибку 401
+# PURPOSE: Аутентификация пользователя и выдача JWT токенов.
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_view(request):
@@ -133,8 +194,17 @@ def login_view(request):
         'refresh': str(refresh),
         'user': UserSerializer(user).data,
     })
+# [END_LOGIN_VIEW]
 
 
+# [START_REGISTER_VIEW]
+# ANCHOR: REGISTER_VIEW
+# @PreConditions:
+# - request.data содержит email, password, full_name, role
+# @PostConditions:
+# - при успехе создаёт нового пользователя и возвращает его данные
+# - возвращает статус 201
+# PURPOSE: Регистрация нового пользователя в системе.
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register_view(request):
@@ -151,8 +221,18 @@ def register_view(request):
         UserSerializer(user).data,
         status=status.HTTP_201_CREATED
     )
+# [END_REGISTER_VIEW]
 
 
+# [START_LOGOUT_VIEW]
+# ANCHOR: LOGOUT_VIEW
+# @PreConditions:
+# - пользователь аутентифицирован
+# - request.data может содержать refresh токен
+# @PostConditions:
+# - при наличии refresh токена он добавляется в blacklist
+# - возвращает сообщение об успехе или ошибку
+# PURPOSE: Выход из системы с отзывом refresh токена.
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def logout_view(request):
@@ -172,8 +252,17 @@ def logout_view(request):
             {'error': 'Неверный токен.'},
             status=status.HTTP_400_BAD_REQUEST
         )
+# [END_LOGOUT_VIEW]
 
 
+# [START_PASSWORD_RESET_REQUEST_VIEW]
+# ANCHOR: PASSWORD_RESET_REQUEST_VIEW
+# @PreConditions:
+# - request.data содержит email
+# @PostConditions:
+# - создаёт токен сброса пароля (если пользователь существует)
+# - возвращает сообщение (не раскрывает существование email)
+# PURPOSE: Запрос на сброс пароля с созданием токена.
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def password_reset_request_view(request):
@@ -206,8 +295,18 @@ def password_reset_request_view(request):
         'message': 'Если email существует, письмо отправлено.',
         'token': token.token,  # Remove in production
     })
+# [END_PASSWORD_RESET_REQUEST_VIEW]
 
 
+# [START_PASSWORD_RESET_CONFIRM_VIEW]
+# ANCHOR: PASSWORD_RESET_CONFIRM_VIEW
+# @PreConditions:
+# - request.data содержит token и new_password
+# @PostConditions:
+# - при валидном токене устанавливает новый пароль
+# - токен помечается как использованный
+# - при ошибке возвращает 400
+# PURPOSE: Подтверждение сброса пароля с установкой нового.
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def password_reset_confirm_view(request):
@@ -251,3 +350,4 @@ def password_reset_confirm_view(request):
     reset_token.mark_as_used()
     
     return Response({'message': 'Пароль успешно сброшен.'})
+# [END_PASSWORD_RESET_CONFIRM_VIEW]

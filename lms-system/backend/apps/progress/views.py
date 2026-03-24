@@ -11,6 +11,19 @@ from .models import UserProgress
 from .serializers import CourseProgressSerializer, UserProgressSerializer
 
 
+# === CHUNK: PROGRESS_VIEWS_V1 [PROGRESS] ===
+# Описание: ViewSet для управления прогрессом пользователей.
+# Dependencies: PROGRESS_MODELS_V1, PROGRESS_SERIALIZERS_V1
+
+
+# [START_PROGRESS_VIEWSET]
+# ANCHOR: PROGRESS_VIEWSET
+# @PreConditions:
+# - нет нетривиальных предусловий для класса
+# @PostConditions:
+# - предоставляет CRUD операции для прогресса
+# - предоставляет action для сводки по курсам
+# PURPOSE: ViewSet для управления прогрессом пользователя по модулям.
 class ProgressViewSet(viewsets.ModelViewSet):
     """ViewSet for UserProgress model."""
     
@@ -18,6 +31,14 @@ class ProgressViewSet(viewsets.ModelViewSet):
     serializer_class = UserProgressSerializer
     permission_classes = [IsAuthenticated]
     
+    # [START_GET_QUERYSET_PROGRESS]
+    # ANCHOR: GET_QUERYSET_PROGRESS
+    # @PreConditions:
+    # - request.user аутентифицирован
+    # @PostConditions:
+    # - возвращает только прогресс текущего пользователя
+    # - при наличии course_id фильтрует по курсу
+    # PURPOSE: Фильтрация прогресса по пользователю и курсу.
     def get_queryset(self):
         queryset = UserProgress.objects.select_related('module', 'module__course').filter(
             user=self.request.user
@@ -26,10 +47,27 @@ class ProgressViewSet(viewsets.ModelViewSet):
         if course_id:
             queryset = queryset.filter(module__course_id=course_id)
         return queryset
+    # [END_GET_QUERYSET_PROGRESS]
     
+    # [START_PERFORM_CREATE_PROGRESS]
+    # ANCHOR: PERFORM_CREATE_PROGRESS
+    # @PreConditions:
+    # - serializer валиден
+    # - request.user аутентифицирован
+    # @PostConditions:
+    # - создаёт запись прогресса с текущим пользователем
+    # PURPOSE: Автоматическое связывание прогресса с текущим пользователем.
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+    # [END_PERFORM_CREATE_PROGRESS]
     
+    # [START_COURSE_SUMMARY]
+    # ANCHOR: COURSE_SUMMARY
+    # @PreConditions:
+    # - request.user аутентифицирован
+    # @PostConditions:
+    # - возвращает сводку прогресса по всем активным курсам пользователя
+    # PURPOSE: Получение сводки прогресса по всем записанным курсам.
     @action(detail=False, methods=['get'])
     def course_summary(self, request):
         """Get progress summary for all enrolled courses."""
@@ -68,3 +106,10 @@ class ProgressViewSet(viewsets.ModelViewSet):
             })
         
         return Response(summaries)
+    # [END_COURSE_SUMMARY]
+
+
+# [END_PROGRESS_VIEWSET]
+
+
+# === END_CHUNK: PROGRESS_VIEWS_V1 ===

@@ -1,81 +1,112 @@
 """Notification services."""
 
-from django.contrib.auth import get_user_model
+from django.conf import settings
+from django.db import transaction
 
 from .models import Notification
 
-User = get_user_model()
+
+# === CHUNK: NOTIFICATION_SERVICES_V1 [NOTIFICATIONS] ===
+# Описание: Бизнес-логика для работы с уведомлениями.
+# Dependencies: NOTIFICATION_MODELS_V1
 
 
+# [START_NOTIFICATION_SERVICE_CLASS]
+# ANCHOR: NOTIFICATION_SERVICE_CLASS
+# @PreConditions:
+# - нет нетривиальных предусловий для класса
+# @PostConditions:
+# - предоставляет методы для создания и управления уведомлениями
+# PURPOSE: Сервисный класс для инкапсуляции бизнес-логики уведомлений.
 class NotificationService:
-    """Service for notification management."""
+    """Service class for notification operations."""
     
+    # [START_CREATE_NOTIFICATION]
+    # ANCHOR: CREATE_NOTIFICATION
+    # @PreConditions:
+    # - user_id существует в БД
+    # - type валидный тип уведомления
+    # - title и message непустые строки
+    # @PostConditions:
+    # - создаёт и возвращает экземпляр Notification
+    # PURPOSE: Создание одного уведомления для пользователя.
     @staticmethod
-    def create_notification(
-        user: User,
-        title: str,
-        message: str,
-        notification_type: str = Notification.Type.INFO
-    ) -> Notification:
-        """
-        Create a notification for a user.
-        
-        Args:
-            user: User instance
-            title: Notification title
-            message: Notification message
-            notification_type: Type of notification (info, warning, success, error)
-            
-        Returns:
-            Created Notification instance
-        """
+    def create_notification(user_id: int, type: str, title: str, message: str) -> Notification:
+        """Create a notification for a user."""
         return Notification.objects.create(
-            user=user,
+            user_id=user_id,
+            type=type,
             title=title,
             message=message,
-            type=notification_type
         )
+    # [END_CREATE_NOTIFICATION]
     
+    # [START_CREATE_BULK_NOTIFICATIONS]
+    # ANCHOR: CREATE_BULK_NOTIFICATIONS
+    # @PreConditions:
+    # - user_ids список существующих ID пользователей
+    # - type валидный тип уведомления
+    # - title и message непустые строки
+    # @PostConditions:
+    # - создаёт уведомления для всех указанных пользователей
+    # - возвращает количество созданных уведомлений
+    # PURPOSE: Массовое создание уведомлений для нескольких пользователей.
     @staticmethod
     def create_bulk_notifications(
-        users: list,
+        user_ids: list[int],
+        type: str,
         title: str,
         message: str,
-        notification_type: str = Notification.Type.INFO
-    ) -> list:
-        """
-        Create notifications for multiple users.
-        
-        Args:
-            users: List of User instances
-            title: Notification title
-            message: Notification message
-            notification_type: Type of notification
-            
-        Returns:
-            List of created Notification instances
-        """
-        notifications = []
-        for user in users:
-            notifications.append(
-                Notification(
-                    user=user,
-                    title=title,
-                    message=message,
-                    type=notification_type
-                )
+    ) -> int:
+        """Create notifications for multiple users."""
+        notifications = [
+            Notification(
+                user_id=user_id,
+                type=type,
+                title=title,
+                message=message,
             )
-        return Notification.objects.bulk_create(notifications)
+            for user_id in user_ids
+        ]
+        created = Notification.objects.bulk_create(notifications)
+        return len(created)
+    # [END_CREATE_BULK_NOTIFICATIONS]
     
+    # [START_GET_UNREAD_NOTIFICATIONS]
+    # ANCHOR: GET_UNREAD_NOTIFICATIONS
+    # @PreConditions:
+    # - user_id существует в БД
+    # @PostConditions:
+    # - возвращает QuerySet непрочитанных уведомлений пользователя
+    # PURPOSE: Получение списка непрочитанных уведомлений пользователя.
     @staticmethod
-    def get_unread_notifications(user: User):
+    def get_unread_notifications(user_id: int):
         """Get unread notifications for a user."""
-        return Notification.objects.filter(user=user, is_read=False)
+        return Notification.objects.filter(
+            user_id=user_id,
+            is_read=False,
+        ).order_by('-created_at')
+    # [END_GET_UNREAD_NOTIFICATIONS]
     
+    # [START_MARK_ALL_READ]
+    # ANCHOR: MARK_ALL_READ
+    # @PreConditions:
+    # - user_id существует в БД
+    # @PostConditions:
+    # - помечает все непрочитанные уведомления пользователя как прочитанные
+    # - возвращает количество обновлённых записей
+    # PURPOSE: Пометить все уведомления пользователя как прочитанные.
     @staticmethod
-    def mark_all_read(user: User) -> int:
+    def mark_all_read(user_id: int) -> int:
         """Mark all notifications as read for a user."""
         return Notification.objects.filter(
-            user=user,
-            is_read=False
+            user_id=user_id,
+            is_read=False,
         ).update(is_read=True)
+    # [END_MARK_ALL_READ]
+
+
+# [END_NOTIFICATION_SERVICE_CLASS]
+
+
+# === END_CHUNK: NOTIFICATION_SERVICES_V1 ===

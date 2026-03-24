@@ -9,6 +9,18 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 
+# === CHUNK: COURSE_MODELS_V1 [COURSES] ===
+# Описание: Модели для управления курсами, модулями и записями на курсы.
+# Dependencies: USER_MODEL_V1, PROGRESS_MODELS_V1
+
+
+# [START_COURSE_MODEL]
+# ANCHOR: COURSE_MODEL
+# @PreConditions:
+# - нет нетривиальных предусловий для класса
+# @PostConditions:
+# - предоставляет модель курса с полями title, description, status
+# PURPOSE: Модель для хранения информации о курсах.
 class Course(models.Model):
     """
     Model for courses.
@@ -37,20 +49,54 @@ class Course(models.Model):
         verbose_name_plural = _('Курсы')
         ordering = ['-created_at']
     
+    # [START_COURSE_STR]
+    # ANCHOR: COURSE_STR
+    # @PreConditions:
+    # - экземпляр Course существует
+    # @PostConditions:
+    # - возвращает строковое представление курса (title)
+    # PURPOSE: Строковое представление курса для админки и отладки.
     def __str__(self):
         return self.title
+    # [END_COURSE_STR]
     
+    # [START_MODULES_COUNT]
+    # ANCHOR: MODULES_COUNT
+    # @PreConditions:
+    # - экземпляр Course существует
+    # @PostConditions:
+    # - возвращает количество модулей в курсе
+    # PURPOSE: Получение количества модулей в курсе.
     @property
     def modules_count(self):
         """Return the number of modules in this course."""
         return self.modules.count()
+    # [END_MODULES_COUNT]
     
+    # [START_ENROLLED_COUNT]
+    # ANCHOR: ENROLLED_COUNT
+    # @PreConditions:
+    # - экземпляр Course существует
+    # @PostConditions:
+    # - возвращает количество активных записей на курс
+    # PURPOSE: Получение количества активных записей на курс.
     @property
     def enrolled_count(self):
         """Return the number of enrolled users."""
         return self.enrollments.filter(status='active').count()
+    # [END_ENROLLED_COUNT]
 
 
+# [END_COURSE_MODEL]
+
+
+# [START_MODULE_MODEL]
+# ANCHOR: MODULE_MODEL
+# @PreConditions:
+# - нет нетривиальных предусловий для класса
+# @PostConditions:
+# - предоставляет модель модуля с полями course, title, content_type, order_num
+# PURPOSE: Модель для хранения модулей курса с контентом.
 class Module(models.Model):
     """
     Model for course modules.
@@ -93,9 +139,25 @@ class Module(models.Model):
         verbose_name_plural = _('Модули')
         ordering = ['order_num', 'created_at']
     
+    # [START_MODULE_STR]
+    # ANCHOR: MODULE_STR
+    # @PreConditions:
+    # - экземпляр Module существует
+    # @PostConditions:
+    # - возвращает строку вида "Название курса - Название модуля"
+    # PURPOSE: Строковое представление модуля для админки и отладки.
     def __str__(self):
         return f'{self.course.title} - {self.title}'
+    # [END_MODULE_STR]
     
+    # [START_MODULE_SAVE]
+    # ANCHOR: MODULE_SAVE
+    # @PreConditions:
+    # - экземпляр Module инициализирован
+    # @PostConditions:
+    # - при отсутствии order_num устанавливается следующий по порядку номер
+    # - экземпляр сохранён в БД
+    # PURPOSE: Автоматическая установка порядкового номера модуля при создании.
     def save(self, *args, **kwargs):
         """Auto-set order_num if not provided."""
         if not self.order_num:
@@ -104,8 +166,19 @@ class Module(models.Model):
             )['max_order']
             self.order_num = (max_order or 0) + 1
         super().save(*args, **kwargs)
+    # [END_MODULE_SAVE]
 
 
+# [END_MODULE_MODEL]
+
+
+# [START_COURSE_ENROLLMENT_MODEL]
+# ANCHOR: COURSE_ENROLLMENT_MODEL
+# @PreConditions:
+# - нет нетривиальных предусловий для класса
+# @PostConditions:
+# - предоставляет модель записи на курс с полями user, course, status
+# PURPOSE: Модель для отслеживания записей пользователей на курсы.
 class CourseEnrollment(models.Model):
     """
     Model for course enrollments.
@@ -145,9 +218,24 @@ class CourseEnrollment(models.Model):
         ordering = ['-enrolled_at']
         unique_together = ['user', 'course']
     
+    # [START_ENROLLMENT_STR]
+    # ANCHOR: ENROLLMENT_STR
+    # @PreConditions:
+    # - экземпляр CourseEnrollment существует
+    # @PostConditions:
+    # - возвращает строку вида "email пользователя - название курса"
+    # PURPOSE: Строковое представление записи для админки и отладки.
     def __str__(self):
         return f'{self.user.email} - {self.course.title}'
+    # [END_ENROLLMENT_STR]
     
+    # [START_PROGRESS_PERCENTAGE]
+    # ANCHOR: PROGRESS_PERCENTAGE
+    # @PreConditions:
+    # - экземпляр CourseEnrollment существует
+    # @PostConditions:
+    # - возвращает процент завершения курса (0-100)
+    # PURPOSE: Расчёт процента прогресса по курсу для данной записи.
     @property
     def progress_percentage(self):
         """Calculate progress percentage for this enrollment."""
@@ -165,3 +253,10 @@ class CourseEnrollment(models.Model):
         ).count()
         
         return round((completed_modules / total_modules) * 100, 2)
+    # [END_PROGRESS_PERCENTAGE]
+
+
+# [END_COURSE_ENROLLMENT_MODEL]
+
+
+# === END_CHUNK: COURSE_MODELS_V1 ===

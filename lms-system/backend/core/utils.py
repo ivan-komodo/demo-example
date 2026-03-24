@@ -16,6 +16,19 @@ from django.template.loader import render_to_string
 logger = logging.getLogger('lms')
 
 
+# === CHUNK: CORE_UTILS_V1 [CORE] ===
+# Описание: Утилиты общего назначения для всего проекта.
+# Dependencies: none
+
+
+# [START_SEND_EMAIL]
+# ANCHOR: SEND_EMAIL
+# @PreConditions:
+# - subject, message непустые строки
+# - recipient_list непустой список email адресов
+# @PostConditions:
+# - возвращает True при успешной отправке, False при ошибке
+# PURPOSE: Отправка email сообщения через Django mail backend.
 def send_email(
     subject: str,
     message: str,
@@ -49,8 +62,19 @@ def send_email(
     except Exception as e:
         logger.error(f'Failed to send email: {e}')
         return False
+# [END_SEND_EMAIL]
 
 
+# [START_SEND_TEMPLATE_EMAIL]
+# ANCHOR: SEND_TEMPLATE_EMAIL
+# @PreConditions:
+# - subject непустая строка
+# - template_name путь к существующему шаблону
+# - context словарь с данными для шаблона
+# - recipient_list непустой список email адресов
+# @PostConditions:
+# - возвращает True при успешной отправке, False при ошибке
+# PURPOSE: Отправка email по HTML шаблону с текстовой версией.
 def send_template_email(
     subject: str,
     template_name: str,
@@ -85,8 +109,17 @@ def send_template_email(
     except Exception as e:
         logger.error(f'Failed to send template email: {e}')
         return False
+# [END_SEND_TEMPLATE_EMAIL]
 
 
+# [START_FORMAT_CURRENCY]
+# ANCHOR: FORMAT_CURRENCY
+# @PreConditions:
+# - amount валидное Decimal значение
+# - currency код валюты (по умолчанию RUB)
+# @PostConditions:
+# - возвращает строку формата "1,234.56 RUB"
+# PURPOSE: Форматирование суммы как валюты.
 def format_currency(amount: Decimal, currency: str = 'RUB') -> str:
     """
     Format amount as currency.
@@ -99,8 +132,16 @@ def format_currency(amount: Decimal, currency: str = 'RUB') -> str:
         Formatted currency string
     """
     return f'{amount:,.2f} {currency}'
+# [END_FORMAT_CURRENCY]
 
 
+# [START_CALCULATE_PERCENTAGE]
+# ANCHOR: CALCULATE_PERCENTAGE
+# @PreConditions:
+# - value, total валидные Decimal значения
+# @PostConditions:
+# - возвращает процент value от total (0 при total=0)
+# PURPOSE: Вычисление процента от общего значения.
 def calculate_percentage(value: Decimal, total: Decimal) -> Decimal:
     """
     Calculate percentage.
@@ -115,8 +156,16 @@ def calculate_percentage(value: Decimal, total: Decimal) -> Decimal:
     if total == 0:
         return Decimal('0.00')
     return (value / total) * Decimal('100')
+# [END_CALCULATE_PERCENTAGE]
 
 
+# [START_GENERATE_RANDOM_STRING]
+# ANCHOR: GENERATE_RANDOM_STRING
+# @PreConditions:
+# - length положительное целое число (по умолчанию 32)
+# @PostConditions:
+# - возвращает случайную строку указанной длины из a-zA-Z0-9
+# PURPOSE: Генерация криптографически безопасной случайной строки.
 def generate_random_string(length: int = 32) -> str:
     """
     Generate a random string.
@@ -132,8 +181,19 @@ def generate_random_string(length: int = 32) -> str:
     
     alphabet = string.ascii_letters + string.digits
     return ''.join(secrets.choice(alphabet) for _ in range(length))
+# [END_GENERATE_RANDOM_STRING]
 
 
+# [START_TRUNCATE_STRING]
+# ANCHOR: TRUNCATE_STRING
+# @PreConditions:
+# - text строка для обрезки
+# - max_length максимальная длина (по умолчанию 100)
+# - suffix суффикс при обрезке (по умолчанию "...")
+# @PostConditions:
+# - возвращает исходную строку если длина <= max_length
+# - иначе обрезанную строку с суффиксом
+# PURPOSE: Обрезка строки до заданной длины с добавлением суффикса.
 def truncate_string(text: str, max_length: int = 100, suffix: str = '...') -> str:
     """
     Truncate a string to a maximum length.
@@ -149,8 +209,16 @@ def truncate_string(text: str, max_length: int = 100, suffix: str = '...') -> st
     if len(text) <= max_length:
         return text
     return text[:max_length - len(suffix)] + suffix
+# [END_TRUNCATE_STRING]
 
 
+# [START_GET_CLIENT_IP]
+# ANCHOR: GET_CLIENT_IP
+# @PreConditions:
+# - request валидный Django HttpRequest объект
+# @PostConditions:
+# - возвращает IP адрес клиента (из X-Forwarded-For или REMOTE_ADDR)
+# PURPOSE: Получение IP адреса клиента из запроса.
 def get_client_ip(request) -> str:
     """
     Get client IP address from request.
@@ -165,3 +233,7 @@ def get_client_ip(request) -> str:
     if x_forwarded_for:
         return x_forwarded_for.split(',')[0].strip()
     return request.META.get('REMOTE_ADDR', '')
+# [END_GET_CLIENT_IP]
+
+
+# === END_CHUNK: CORE_UTILS_V1 ===

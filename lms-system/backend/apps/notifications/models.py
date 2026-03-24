@@ -7,6 +7,18 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 
+# === CHUNK: NOTIFICATION_MODELS_V1 [NOTIFICATIONS] ===
+# Описание: Модель уведомлений пользователей.
+# Dependencies: none
+
+
+# [START_NOTIFICATION_MODEL]
+# ANCHOR: NOTIFICATION_MODEL
+# @PreConditions:
+# - нет нетривиальных предусловий
+# @PostConditions:
+# - создаёт модель уведомления с полями user, type, title, message, is_read
+# PURPOSE: Модель для хранения уведомлений пользователей.
 class Notification(models.Model):
     """
     Model for user notifications.
@@ -40,11 +52,33 @@ class Notification(models.Model):
         verbose_name_plural = _('Уведомления')
         ordering = ['-created_at']
     
+    # [START_NOTIFICATION_STR]
+    # ANCHOR: NOTIFICATION_STR
+    # @PreConditions:
+    # - экземпляр модели существует
+    # @PostConditions:
+    # - возвращает строковое представление уведомления
+    # PURPOSE: Строковое представление уведомления для админки и логов.
     def __str__(self):
         return f'{self.user.email} - {self.title}'
+    # [END_NOTIFICATION_STR]
     
+    # [START_MARK_AS_READ]
+    # ANCHOR: MARK_AS_READ
+    # @PreConditions:
+    # - экземпляр модели существует
+    # @PostConditions:
+    # - устанавливает is_read=True и сохраняет
+    # PURPOSE: Пометить уведомление как прочитанное.
     def mark_as_read(self):
         """Mark notification as read."""
         if not self.is_read:
             self.is_read = True
             self.save(update_fields=['is_read'])
+    # [END_MARK_AS_READ]
+
+
+# [END_NOTIFICATION_MODEL]
+
+
+# === END_CHUNK: NOTIFICATION_MODELS_V1 ===

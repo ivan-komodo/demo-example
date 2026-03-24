@@ -12,9 +12,29 @@ from .models import PasswordResetToken, RefreshToken
 User = get_user_model()
 
 
+# === CHUNK: USER_SERVICES_V1 [USER_MANAGEMENT] ===
+# Описание: Сервисы для управления пользователями и токенами.
+# Dependencies: USER_MODEL_V1
+
+
+# [START_USER_SERVICE_CLASS]
+# ANCHOR: USER_SERVICE_CLASS
+# @PreConditions:
+# - нет нетривиальных предусловий для класса
+# @PostConditions:
+# - предоставляет статические методы для управления пользователями
+# PURPOSE: Инкапсуляция бизнес-логики управления пользователями.
 class UserService:
     """Service for user management."""
     
+    # [START_CREATE_USER_SERVICE]
+    # ANCHOR: CREATE_USER_SERVICE
+    # @PreConditions:
+    # - email: непустая строка с валидным email-форматом
+    # - password: непустая строка
+    # @PostConditions:
+    # - возвращает созданный экземпляр User с хешированным паролем
+    # PURPOSE: Создание нового пользователя через UserManager.
     @staticmethod
     def create_user(email: str, password: str, full_name: str = '', role: str = 'learner') -> User:
         """
@@ -35,7 +55,16 @@ class UserService:
             full_name=full_name,
             role=role,
         )
+    # [END_CREATE_USER_SERVICE]
     
+    # [START_DEACTIVATE_USER]
+    # ANCHOR: DEACTIVATE_USER
+    # @PreConditions:
+    # - user_id: целое положительное число
+    # @PostConditions:
+    # - возвращает True если пользователь найден и деактивирован
+    # - возвращает False если пользователь не найден
+    # PURPOSE: Деактивация учётной записи пользователя.
     @staticmethod
     def deactivate_user(user_id: int) -> bool:
         """
@@ -54,7 +83,16 @@ class UserService:
             return True
         except User.DoesNotExist:
             return False
+    # [END_DEACTIVATE_USER]
     
+    # [START_ACTIVATE_USER]
+    # ANCHOR: ACTIVATE_USER
+    # @PreConditions:
+    # - user_id: целое положительное число
+    # @PostConditions:
+    # - возвращает True если пользователь найден и активирован
+    # - возвращает False если пользователь не найден
+    # PURPOSE: Активация учётной записи пользователя.
     @staticmethod
     def activate_user(user_id: int) -> bool:
         """
@@ -73,11 +111,30 @@ class UserService:
             return True
         except User.DoesNotExist:
             return False
+    # [END_ACTIVATE_USER]
 
 
+# [END_USER_SERVICE_CLASS]
+
+
+# [START_TOKEN_SERVICE_CLASS]
+# ANCHOR: TOKEN_SERVICE_CLASS
+# @PreConditions:
+# - нет нетривиальных предусловий для класса
+# @PostConditions:
+# - предоставляет статические методы для управления токенами
+# PURPOSE: Инкапсуляция бизнес-логики управления токенами сброса пароля и refresh-токенами.
 class TokenService:
     """Service for token management."""
     
+    # [START_CREATE_PASSWORD_RESET_TOKEN]
+    # ANCHOR: CREATE_PASSWORD_RESET_TOKEN
+    # @PreConditions:
+    # - user: экземпляр User, существующий в БД
+    # @PostConditions:
+    # - предыдущие неиспользованные токены пользователя помечены как использованные
+    # - возвращает новый PasswordResetToken с expires_at через 24 часа
+    # PURPOSE: Создание токена для сброса пароля с инвалидацией старых токенов.
     @staticmethod
     def create_password_reset_token(user: User) -> PasswordResetToken:
         """
@@ -100,7 +157,16 @@ class TokenService:
             token=PasswordResetToken.objects.make_random_password(64),
             expires_at=timezone.now() + timezone.timedelta(hours=24)
         )
+    # [END_CREATE_PASSWORD_RESET_TOKEN]
     
+    # [START_VALIDATE_PASSWORD_RESET_TOKEN]
+    # ANCHOR: VALIDATE_PASSWORD_RESET_TOKEN
+    # @PreConditions:
+    # - token: непустая строка
+    # @PostConditions:
+    # - при валидном токене возвращает (User, None)
+    # - при невалидном токене возвращает (None, error_message)
+    # PURPOSE: Валидация токена сброса пароля.
     @staticmethod
     def validate_password_reset_token(token: str) -> tuple[User | None, str | None]:
         """
@@ -124,7 +190,16 @@ class TokenService:
             return None, 'Токен истёк.'
         
         return reset_token.user, None
+    # [END_VALIDATE_PASSWORD_RESET_TOKEN]
     
+    # [START_REVOKE_ALL_REFRESH_TOKENS]
+    # ANCHOR: REVOKE_ALL_REFRESH_TOKENS
+    # @PreConditions:
+    # - user: экземпляр User, существующий в БД
+    # @PostConditions:
+    # - все активные refresh-токены пользователя помечены как отозванные
+    # - возвращает количество отозванных токенов
+    # PURPOSE: Отзыв всех refresh-токенов пользователя (logout из всех сессий).
     @staticmethod
     def revoke_all_refresh_tokens(user: User) -> int:
         """
@@ -140,3 +215,10 @@ class TokenService:
             user=user,
             revoked_at__isnull=True,
         ).update(revoked_at=timezone.now())
+    # [END_REVOKE_ALL_REFRESH_TOKENS]
+
+
+# [END_TOKEN_SERVICE_CLASS]
+
+
+# === END_CHUNK: USER_SERVICES_V1 ===

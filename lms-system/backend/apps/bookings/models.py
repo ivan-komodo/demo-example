@@ -7,6 +7,18 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 
+# === CHUNK: BOOKING_MODELS_V1 [BOOKINGS] ===
+# Описание: Модели для бронирования ресурсов (аудитории, тренеры, оборудование).
+# Dependencies: none
+
+
+# [START_RESOURCE_MODEL]
+# ANCHOR: RESOURCE_MODEL
+# @PreConditions:
+# - нет нетривиальных предусловий
+# @PostConditions:
+# - создаёт модель ресурса с полями name, type, description, capacity, is_active
+# PURPOSE: Модель для бронирования ресурсов (аудитории, тренеры, оборудование).
 class Resource(models.Model):
     """
     Model for bookable resources (classrooms, trainers, equipment).
@@ -34,10 +46,28 @@ class Resource(models.Model):
         verbose_name_plural = _('Ресурсы')
         ordering = ['name']
     
+    # [START_RESOURCE_STR]
+    # ANCHOR: RESOURCE_STR
+    # @PreConditions:
+    # - экземпляр модели существует
+    # @PostConditions:
+    # - возвращает строковое представление ресурса
+    # PURPOSE: Строковое представление ресурса для админки и логов.
     def __str__(self):
         return f'{self.name} ({self.get_type_display()})'
+    # [END_RESOURCE_STR]
 
 
+# [END_RESOURCE_MODEL]
+
+
+# [START_BOOKING_MODEL]
+# ANCHOR: BOOKING_MODEL
+# @PreConditions:
+# - нет нетривиальных предусловий
+# @PostConditions:
+# - создаёт модель бронирования с полями resource, user, course, title, start_time, end_time, status
+# PURPOSE: Модель для бронирования ресурсов пользователями.
 class Booking(models.Model):
     """
     Model for resource bookings.
@@ -86,9 +116,24 @@ class Booking(models.Model):
         verbose_name_plural = _('Бронирования')
         ordering = ['-start_time']
     
+    # [START_BOOKING_STR]
+    # ANCHOR: BOOKING_STR
+    # @PreConditions:
+    # - экземпляр модели существует
+    # @PostConditions:
+    # - возвращает строковое представление бронирования
+    # PURPOSE: Строковое представление бронирования для админки и логов.
     def __str__(self):
         return f'{self.title} - {self.resource.name} ({self.start_time})'
+    # [END_BOOKING_STR]
     
+    # [START_BOOKING_CLEAN]
+    # ANCHOR: BOOKING_CLEAN
+    # @PreConditions:
+    # - экземпляр модели существует
+    # @PostConditions:
+    # - при ошибке выбрасывает ValidationError
+    # PURPOSE: Валидация времени бронирования (end_time > start_time).
     def clean(self):
         """Validate booking times."""
         from django.core.exceptions import ValidationError
@@ -97,7 +142,16 @@ class Booking(models.Model):
             raise ValidationError({
                 'end_time': _('Время окончания должно быть позже времени начала.')
             })
+    # [END_BOOKING_CLEAN]
     
+    # [START_CHECK_CONFLICT]
+    # ANCHOR: CHECK_CONFLICT
+    # @PreConditions:
+    # - экземпляр модели существует
+    # - resource, start_time, end_time заданы
+    # @PostConditions:
+    # - возвращает True если есть конфликт, иначе False
+    # PURPOSE: Проверка конфликтов бронирования ресурса.
     def check_conflict(self):
         """Check for booking conflicts."""
         conflicting = Booking.objects.filter(
@@ -108,3 +162,10 @@ class Booking(models.Model):
         ).exclude(pk=self.pk)
         
         return conflicting.exists()
+    # [END_CHECK_CONFLICT]
+
+
+# [END_BOOKING_MODEL]
+
+
+# === END_CHUNK: BOOKING_MODELS_V1 ===
