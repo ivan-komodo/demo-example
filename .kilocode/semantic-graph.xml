@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Семантический граф LMS System.
+  Файл-источник правды для навигации LLM-агентов.
+  Обновлять при каждом существенном изменении архитектуры.
+-->
+<semantic-graph version="1.0" last-updated="2026-03-24">
+
+  <!-- ============================================ -->
+  <!-- META: Продукт, назначение, ограничения      -->
+  <!-- ============================================ -->
+  <meta>
+    <product>LMS System MVP</product>
+    <description>
+      Система управления обучением (Learning Management System) для корпоративного обучения сотрудников.
+      MVP включает: курсы, модули, тесты, прогресс, бронирование ресурсов, уведомления.
+    </description>
+    <tech-stack>
+      <backend>Python 3.14 + Django 6.0.3 + DRF 3.17.0</backend>
+      <frontend>HTML5 + Plain JavaScript (ES6+)</frontend>
+      <database>PostgreSQL 15.x</database>
+      <cache>Redis 7.3.0</cache>
+      <auth>JWT (simplejwt 5.5.1) + bcrypt 5.0.0</auth>
+      <docs>drf-spectacular (OpenAPI/Swagger)</docs>
+    </tech-stack>
+    <constraints>
+      <constraint>Без фреймворков на frontend (plain JS)</constraint>
+      <constraint>REST API с JWT-авторизацией</constraint>
+      <constraint>Роли: admin, trainer, learner</constraint>
+    </constraints>
+    <note>
+      Проект в активной разработке. Backend запущен на localhost:8000.
+      Frontend — статические файлы, обслуживаются через Django/Nginx.
+    </note>
+  </meta>
+
+  <!-- ============================================ -->
+  <!-- COMPONENTS: Логические блоки системы        -->
+  <!-- ============================================ -->
+  <components>
+
+    <!-- === BACKEND CORE === -->
+    <component id="backend.config" kind="package" path="lms-system/backend/config">
+      <role>Конфигурация Django-проекта</role>
+      <exposes>
+        <api name="urls" type="router">Точка входа URL-маршрутизации</api>
+        <api name="settings.base" type="config">Базовые настройки</api>
+        <api name="settings.development" type="config">Настройки разработки</api>
+        <api name="settings.production" type="config">Настройки продакшена</api>
+      </exposes>
+    </component>
+
+    <component id="backend.core" kind="package" path="lms-system/backend/core">
+      <role>Общая логика backend (permissions, pagination, exceptions, utils)</role>
+      <exposes>
+        <api name="permissions" type="module">Базовые права доступа</api>
+        <api name="pagination.StandardPagination" type="class">Пагинация API</api>
+        <api name="exceptions" type="module">Кастомные исключения</api>
+        <api name="middleware" type="module">Промежуточное ПО</api>
+      </exposes>
+    </component>
+
+    <!-- === USERS APP === -->
+    <component id="backend.apps.users" kind="django-app" path="lms-system/backend/apps/users">
+      <role>Управление пользователями и аутентификация</role>
+      <depends-on ref="backend.core"/>
+      <exposes>
+        <api name="models.User" type="model">Пользователь с ролями admin/trainer/learner</api>
+        <api name="models.RefreshToken" type="model">JWT refresh токены</api>
+        <api name="models.PasswordResetToken" type="model">Токены сброса пароля</api>
+        <api name="views.AuthViewSet" type="viewset">Регистрация, логин, логаут, refresh</api>
+        <api name="views.UserViewSet" type="viewset">CRUD пользователей</api>
+        <api name="services.AuthService" type="service">Бизнес-логика аутентификации</api>
+        <api name="permissions" type="module">Ролевые права доступа</api>
+      </exposes>
+      <consumes>
+        <api ref="backend.core.permissions"/>
+      </consumes>
+    </component>
+
+    <!-- === COURSES APP === -->
+    <component id="backend.apps.courses" kind="django-app" path="lms-system/backend/apps/courses">
+      <role>Управление курсами и модулями</role>
+      <depends-on ref="backend.apps.users"/>
+      <exposes>
+        <api name="models.Course" type="model">Курс (draft/published/archived)</api>
+        <api name="models.Module" type="model">Модуль курса (text/pdf/video)</api>
+        <api name="models.CourseEnrollment" type="model">Запись пользователя на курс</api>
+        <api name="views.CourseViewSet" type="viewset">CRUD курсов</api>
+        <api name="views.ModuleViewSet" type="viewset">CRUD модулей</api>
+        <api name="views.EnrollmentViewSet" type="viewset">Управление записями</api>
+        <api name="services.CourseService" type="service">Бизнес-логика курсов</api>
+      </exposes>
+    </component>
+
+    <!-- === QUIZZES APP === -->
+    <component id="backend.apps.quizzes" kind="django-app" path="lms-system/backend/apps/quizzes">
+      <role>Тесты и попытки прохождения</role>
+      <depends-on ref="backend.apps.courses"/>
+      <depends-on ref="backend.apps.users"/>
+      <exposes>
+        <api name="models.Quiz" type="model">Вопрос теста (single/multiple/open)</api>
+        <api name="models.QuizOption" type="model">Вариант ответа</api>
+        <api name="models.QuizAttempt" type="model">Попытка прохождения (макс. 3)</api>
+        <api name="models.QuizAnswer" type="model">Ответ пользователя</api>
+        <api name="views.QuizViewSet" type="viewset">CRUD тестов</api>
+        <api name="views.QuizAttemptViewSet" type="viewset">Попытки прохождения</api>
+        <api name="services.QuizService" type="service">Бизнес-логика тестов</api>
+      </exposes>
+    </component>
+
+    <!-- === PROGRESS APP === -->
+    <component id="backend.apps.progress" kind="django-app" path="lms-system/backend/apps/progress">
+      <role>Отслеживание прогресса пользователей</role>
+      <depends-on ref="backend.apps.courses"/>
+      <depends-on ref="backend.apps.users"/>
+      <exposes>
+        <api name="models.UserProgress" type="model">Прогресс по модулю (not_started/in_progress/completed)</api>
+        <api name="views.ProgressViewSet" type="viewset">API прогресса</api>
+        <api name="services.ProgressService" type="service">Бизнес-логика прогресса</api>
+      </exposes>
+    </component>
+
+    <!-- === BOOKINGS APP === -->
+    <component id="backend.apps.bookings" kind="django-app" path="lms-system/backend/apps/bookings">
+      <role>Бронирование ресурсов (аудитории, тренеры, оборудование)</role>
+      <depends-on ref="backend.apps.users"/>
+      <depends-on ref="backend.apps.courses"/>
+      <exposes>
+        <api name="models.Resource" type="model">Ресурс (classroom/trainer/equipment)</api>
+        <api name="models.Booking" type="model">Бронирование (pending/confirmed/cancelled)</api>
+        <api name="views.ResourceViewSet" type="viewset">CRUD ресурсов</api>
+        <api name="views.BookingViewSet" type="viewset">CRUL бронирований</api>
+        <api name="services.BookingService" type="service">Бизнес-логика бронирования</api>
+      </exposes>
+    </component>
+
+    <!-- === NOTIFICATIONS APP === -->
+    <component id="backend.apps.notifications" kind="django-app" path="lms-system/backend/apps/notifications">
+      <role>Система уведомлений пользователей</role>
+      <depends-on ref="backend.apps.users"/>
+      <exposes>
+        <api name="models.Notification" type="model">Уведомление пользователя</api>
+        <api name="views.NotificationViewSet" type="viewset">CRUD уведомлений</api>
+        <api name="services.NotificationService" type="service">Создание и отправка уведомлений</api>
+      </exposes>
+    </component>
+
+    <!-- === FRONTEND === -->
+    <component id="frontend" kind="package" path="lms-system/frontend">
+      <role>Клиентская часть (HTML + Plain JS)</role>
+      <exposes>
+        <api name="index.html" type="page">Главная страница</api>
+        <api name="css/styles.css" type="stylesheet">Стили</api>
+      </exposes>
+    </component>
+
+    <component id="frontend.api" kind="module" path="lms-system/frontend/js/api.js">
+      <role>API клиент для взаимодействия с backend</role>
+      <depends-on ref="frontend"/>
+      <exposes>
+        <api name="APIClient" type="class">HTTP клиент с JWT-авторизацией</api>
+        <api name="apiClient" type="instance">Глобальный экземпляр клиента</api>
+      </exposes>
+    </component>
+
+    <component id="frontend.auth" kind="module" path="lms-system/frontend/js/auth.js">
+      <role>Управление аутентификацией на клиенте</role>
+      <depends-on ref="frontend.api"/>
+      <exposes>
+        <api name="AuthManager" type="class">Логин, логаут, refresh токенов</api>
+        <api name="authManager" type="instance">Глобальный менеджер аутентификации</api>
+      </exposes>
+    </component>
+
+    <component id="frontend.main" kind="module" path="lms-system/frontend/js/main.js">
+      <role>Главный модуль инициализации приложения</role>
+      <depends-on ref="frontend.api"/>
+      <depends-on ref="frontend.auth"/>
+    </component>
+
+    <!-- === INFRASTRUCTURE === -->
+    <component id="infra.docker" kind="package" path="lms-system/docker">
+      <role>Docker-конфигурация для деплоя</role>
+      <exposes>
+        <api name="docker-compose.yml" type="config">Оркестрация контейнеров</api>
+        <api name="Dockerfile" type="config">Образ backend</api>
+        <api name="nginx/nginx.conf" type="config">Конфигурация Nginx</api>
+      </exposes>
+    </component>
+
+  </components>
+
+  <!-- ============================================ -->
+  <!-- RELATIONSHIPS: Рёбра графа                  -->
+  <!-- ============================================ -->
+  <relationships>
+
+    <!-- API Endpoints -->
+    <edge id="api.auth" from="frontend.api" to="backend.apps.users" kind="http-rest">
+      <endpoint>/api/auth/</endpoint>
+      <methods>POST (login, register, refresh), POST (logout)</methods>
+    </edge>
+
+    <edge id="api.courses" from="frontend.api" to="backend.apps.courses" kind="http-rest">
+      <endpoint>/api/courses/</endpoint>
+      <methods>GET, POST, PUT, PATCH, DELETE</methods>
+    </edge>
+
+    <edge id="api.quizzes" from="frontend.api" to="backend.apps.quizzes" kind="http-rest">
+      <endpoint>/api/quizzes/</endpoint>
+      <methods>GET, POST</methods>
+    </edge>
+
+    <edge id="api.progress" from="frontend.api" to="backend.apps.progress" kind="http-rest">
+      <endpoint>/api/progress/</endpoint>
+      <methods>GET, PUT</methods>
+    </edge>
+
+    <edge id="api.bookings" from="frontend.api" to="backend.apps.bookings" kind="http-rest">
+      <endpoint>/api/bookings/</endpoint>
+      <methods>GET, POST, PUT, PATCH, DELETE</methods>
+    </edge>
+
+    <edge id="api.notifications" from="frontend.api" to="backend.apps.notifications" kind="http-rest">
+      <endpoint>/api/notifications/</endpoint>
+      <methods>GET, PATCH</methods>
+    </edge>
+
+    <!-- Database Relations -->
+    <edge id="db.user-courses" from="backend.apps.courses" to="backend.apps.users" kind="fk">
+      <relation>CourseEnrollment.user → User</relation>
+    </edge>
+
+    <edge id="db.course-modules" from="backend.apps.courses" to="backend.apps.courses" kind="fk">
+      <relation>Module.course → Course</relation>
+    </edge>
+
+    <edge id="db.module-quizzes" from="backend.apps.quizzes" to="backend.apps.courses" kind="fk">
+      <relation>Quiz.module → Module</relation>
+    </edge>
+
+    <edge id="db.quiz-attempts" from="backend.apps.quizzes" to="backend.apps.users" kind="fk">
+      <relation>QuizAttempt.user → User</relation>
+    </edge>
+
+    <edge id="db.progress-user" from="backend.apps.progress" to="backend.apps.users" kind="fk">
+      <relation>UserProgress.user → User</relation>
+    </edge>
+
+    <edge id="db.progress-module" from="backend.apps.progress" to="backend.apps.courses" kind="fk">
+      <relation>UserProgress.module → Module</relation>
+    </edge>
+
+    <edge id="db.bookings-user" from="backend.apps.bookings" to="backend.apps.users" kind="fk">
+      <relation>Booking.user → User</relation>
+    </edge>
+
+    <edge id="db.notifications-user" from="backend.apps.notifications" to="backend.apps.users" kind="fk">
+      <relation>Notification.user → User</relation>
+    </edge>
+
+    <!-- Frontend Dependencies -->
+    <edge id="fe.main-api" from="frontend.main" to="frontend.api" kind="import"/>
+    <edge id="fe.main-auth" from="frontend.main" to="frontend.auth" kind="import"/>
+    <edge id="fe.auth-api" from="frontend.auth" to="frontend.api" kind="import"/>
+
+  </relationships>
+
+  <!-- ============================================ -->
+  <!-- DATA-FLOW: Потоки данных                    -->
+  <!-- ============================================ -->
+  <data-flow>
+
+    <flow id="auth-flow">
+      <description>Аутентификация пользователя</description>
+      <steps>
+        <step order="1" component="frontend.auth">Пользователь вводит email/password</step>
+        <step order="2" component="frontend.api">POST /api/auth/login/</step>
+        <step order="3" component="backend.apps.users.views">Валидация credentials</step>
+        <step order="4" component="backend.apps.users.services">Генерация JWT токенов</step>
+        <step order="5" component="frontend.api">Сохранение токенов в localStorage</step>
+      </steps>
+    </flow>
+
+    <flow id="course-enrollment-flow">
+      <description>Запись пользователя на курс</description>
+      <steps>
+        <step order="1" component="frontend.main">Пользователь выбирает курс</step>
+        <step order="2" component="frontend.api">POST /api/courses/{id}/enroll/</step>
+        <step order="3" component="backend.apps.courses.views">Создание CourseEnrollment</step>
+        <step order="4" component="backend.apps.notifications.services">Создание уведомления</step>
+      </steps>
+    </flow>
+
+    <flow id="quiz-attempt-flow">
+      <description>Прохождение теста</description>
+      <steps>
+        <step order="1" component="frontend.main">Пользователь открывает тест</step>
+        <step order="2" component="frontend.api">GET /api/quizzes/{id}/</step>
+        <step order="3" component="frontend.main">Пользователь отвечает на вопросы</step>
+        <step order="4" component="frontend.api">POST /api/quizzes/{id}/submit/</step>
+        <step order="5" component="backend.apps.quizzes.services">Проверка ответов, расчёт score</step>
+        <step order="6" component="backend.apps.progress.services">Обновление UserProgress</step>
+      </steps>
+    </flow>
+
+  </data-flow>
+
+  <!-- ============================================ -->
+  <!-- DECISIONS: Архитектурные решения            -->
+  <!-- ============================================ -->
+  <decisions>
+
+    <decision id="ADR-001" status="accepted">
+      <title>Plain JavaScript на frontend</title>
+      <rationale>
+        MVP не требует сложного UI. Plain JS снижает порог входа и упрощает поддержку.
+        При необходимости масштабирования можно мигрировать на Vue/React.
+      </rationale>
+      <consequences>
+        <consequence>Меньше зависимостей и быстрее загрузка</consequence>
+        <consequence>Ограниченные инструменты для управления состоянием</consequence>
+      </consequences>
+    </decision>
+
+    <decision id="ADR-002" status="accepted">
+      <title>JWT + Refresh Token для аутентификации</title>
+      <rationale>
+        Stateless-аутентификация удобна для REST API. Refresh токены позволяют
+        безопасно обновлять access токены без повторного ввода пароля.
+      </rationale>
+      <consequences>
+        <consequence>Access токен живёт 8 часов, refresh — 30 дней</consequence>
+        <consequence>Токены хранятся в БД для возможности отзыва</consequence>
+      </consequences>
+    </decision>
+
+    <decision id="ADR-003" status="accepted">
+      <title>Разделение на Django-приложения по доменам</title>
+      <rationale>
+        Каждый домен (users, courses, quizzes, progress, bookings, notifications)
+        выделен в отдельное Django-приложение для лучшей модульности и соблюдения SRP.
+      </rationale>
+      <consequences>
+        <consequence>Чёткие границы между доменами</consequence>
+        <consequence>Возможность независимого развития каждого модуля</consequence>
+      </consequences>
+    </decision>
+
+    <decision id="ADR-004" status="accepted">
+      <title>Семантическая разметка кода</title>
+      <rationale>
+        Использование ANCHOR, CHUNK, [START]/[END] комментариев для навигации LLM-агентов.
+        См. .kilocode/rules/semantic-code-markup.md
+      </rationale>
+      <consequences>
+        <consequence>Улучшенная навигация для AI-ассистентов</consequence>
+        <consequence>Требуется дисциплина при написании кода</consequence>
+      </consequences>
+    </decision>
+
+  </decisions>
+
+</semantic-graph>
