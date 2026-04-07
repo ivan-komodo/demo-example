@@ -11,12 +11,25 @@
  * Утилиты
  */
 // [START_UTILS_OBJECT]
-// ANCHOR: UTILS_OBJECT
-// @PreConditions:
-// - нет нетривиальных предусловий
-// @PostConditions:
-// - предоставляет методы для форматирования, уведомлений, обработки ошибок
-// PURPOSE: Объект с утилитами общего назначения.
+/**
+ * ANCHOR: UTILS_OBJECT
+ * PURPOSE: Объект с утилитами общего назначения.
+ * 
+ * @PreConditions:
+ * - нет нетривиальных предусловий
+ * 
+ * @PostConditions:
+ * - предоставляет методы для форматирования, уведомлений, обработки ошибок
+ * 
+ * @Invariants:
+ * - все методы stateless
+ * 
+ * @SideEffects:
+ * - методы модифицируют DOM (showNotification, showLoading)
+ * 
+ * @ForbiddenChanges:
+ * - формат даты ru-RU
+ */
 const Utils = {
     /**
      * Форматирование даты
@@ -24,19 +37,40 @@ const Utils = {
      * @returns {string}
      */
     // [START_FORMAT_DATE]
-    // ANCHOR: FORMAT_DATE
-    // @PreConditions:
-    // - date валидная строка даты или объект Date
-    // @PostConditions:
-    // - возвращает строку в формате "день месяц год" (ru-RU)
-    // PURPOSE: Форматирование даты для отображения.
+    /**
+     * ANCHOR: FORMAT_DATE
+     * PURPOSE: Форматирование даты для отображения.
+     * 
+     * @PreConditions:
+     * - date валидная строка даты или объект Date
+     * 
+     * @PostConditions:
+     * - возвращает строку в формате "день месяц год" (ru-RU)
+     * 
+     * @Invariants:
+     * - всегда использует locale ru-RU
+     * 
+     * @SideEffects:
+     * - нет побочных эффектов
+     * 
+     * @ForbiddenChanges:
+     * - locale 'ru-RU'
+     */
     formatDate(date) {
+        logLine("main", "DEBUG", "formatDate", "FORMAT_DATE", "ENTRY", {});
+        
         const d = new Date(date);
-        return d.toLocaleDateString('ru-RU', {
+        const result = d.toLocaleDateString('ru-RU', {
             year: 'numeric',
             month: 'long',
             day: 'numeric',
         });
+        
+        logLine("main", "DEBUG", "formatDate", "FORMAT_DATE", "EXIT", {
+            "result": result
+        });
+        
+        return result;
     },
     // [END_FORMAT_DATE]
 
@@ -46,21 +80,42 @@ const Utils = {
      * @returns {string}
      */
     // [START_FORMAT_DATE_TIME]
-    // ANCHOR: FORMAT_DATE_TIME
-    // @PreConditions:
-    // - date валидная строка даты или объект Date
-    // @PostConditions:
-    // - возвращает строку в формате "день месяц год час:минута" (ru-RU)
-    // PURPOSE: Форматирование даты и времени для отображения.
+    /**
+     * ANCHOR: FORMAT_DATE_TIME
+     * PURPOSE: Форматирование даты и времени для отображения.
+     * 
+     * @PreConditions:
+     * - date валидная строка даты или объект Date
+     * 
+     * @PostConditions:
+     * - возвращает строку в формате "день месяц год час:минута" (ru-RU)
+     * 
+     * @Invariants:
+     * - всегда использует locale ru-RU
+     * 
+     * @SideEffects:
+     * - нет побочных эффектов
+     * 
+     * @ForbiddenChanges:
+     * - locale 'ru-RU'
+     */
     formatDateTime(date) {
+        logLine("main", "DEBUG", "formatDateTime", "FORMAT_DATE_TIME", "ENTRY", {});
+        
         const d = new Date(date);
-        return d.toLocaleDateString('ru-RU', {
+        const result = d.toLocaleDateString('ru-RU', {
             year: 'numeric',
             month: 'long',
             day: 'numeric',
             hour: '2-digit',
             minute: '2-digit',
         });
+        
+        logLine("main", "DEBUG", "formatDateTime", "FORMAT_DATE_TIME", "EXIT", {
+            "result": result
+        });
+        
+        return result;
     },
     // [END_FORMAT_DATE_TIME]
 
@@ -70,14 +125,35 @@ const Utils = {
      * @param {string} type - success, error, warning, info
      */
     // [START_SHOW_NOTIFICATION]
-    // ANCHOR: SHOW_NOTIFICATION
-    // @PreConditions:
-    // - message строка сообщения
-    // - type строка типа уведомления
-    // @PostConditions:
-    // - создаёт и показывает уведомление, скрывает через 5 секунд
-    // PURPOSE: Отображение всплывающего уведомления.
+    /**
+     * ANCHOR: SHOW_NOTIFICATION
+     * PURPOSE: Отображение всплывающего уведомления.
+     * 
+     * @PreConditions:
+     * - message строка сообщения
+     * - type строка типа уведомления
+     * 
+     * @PostConditions:
+     * - создаёт и показывает уведомление, скрывает через 5 секунд
+     * 
+     * @Invariants:
+     * - контейнер уведомлений всегда в z-index:1000, top-right
+     * - авто-скрытие через 5 секунд
+     * 
+     * @SideEffects:
+     * - добавление элементов в DOM
+     * - логирование операции
+     * 
+     * @ForbiddenChanges:
+     * - позиция контейнера (fixed, top-right)
+     * - таймаут 5 секунд
+     */
     showNotification(message, type = 'info') {
+        logLine("main", "DEBUG", "showNotification", "SHOW_NOTIFICATION", "ENTRY", {
+            "message": message.substring(0, 50),
+            "type": type
+        });
+        
         // Создаем контейнер для уведомлений, если его нет
         let container = document.getElementById('notification-container');
         if (!container) {
@@ -90,6 +166,9 @@ const Utils = {
                 z-index: 1000;
             `;
             document.body.appendChild(container);
+            logLine("main", "DEBUG", "showNotification", "SHOW_NOTIFICATION", "BRANCH", {
+                "branch": "container_created"
+            });
         }
 
         // Создаем уведомление
@@ -130,6 +209,14 @@ const Utils = {
         `;
 
         container.appendChild(notification);
+        
+        logLine("main", "INFO", "showNotification", "SHOW_NOTIFICATION", "STATE_CHANGE", {
+            "action": "notification_shown",
+            "type": type
+        });
+        logLine("main", "DEBUG", "showNotification", "SHOW_NOTIFICATION", "EXIT", {
+            "result": "shown"
+        });
 
         // Автоматическое скрытие через 5 секунд
         setTimeout(() => {
@@ -144,18 +231,38 @@ const Utils = {
      * @param {HTMLElement} element 
      */
     // [START_SHOW_LOADING]
-    // ANCHOR: SHOW_LOADING
-    // @PreConditions:
-    // - element DOM элемент
-    // @PostConditions:
-    // - заменяет содержимое элемента спиннером загрузки
-    // PURPOSE: Отображение индикатора загрузки.
+    /**
+     * ANCHOR: SHOW_LOADING
+     * PURPOSE: Отображение индикатора загрузки.
+     * 
+     * @PreConditions:
+     * - element DOM элемент
+     * 
+     * @PostConditions:
+     * - заменяет содержимое элемента спиннером загрузки
+     * 
+     * @Invariants:
+     * - всегда показывает одинаковую структуру спиннера
+     * 
+     * @SideEffects:
+     * - изменение innerHTML элемента
+     * - логирование операции
+     * 
+     * @ForbiddenChanges:
+     * - HTML структура спиннера
+     */
     showLoading(element) {
+        logLine("main", "DEBUG", "showLoading", "SHOW_LOADING", "ENTRY", {});
+        
         element.innerHTML = `
             <div class="loading">
                 <div class="spinner"></div>
             </div>
         `;
+        
+        logLine("main", "DEBUG", "showLoading", "SHOW_LOADING", "EXIT", {
+            "result": "shown"
+        });
     },
     // [END_SHOW_LOADING]
 
@@ -164,23 +271,58 @@ const Utils = {
      * @param {Error} error 
      */
     // [START_HANDLE_ERROR]
-    // ANCHOR: HANDLE_ERROR
-    // @PreConditions:
-    // - error объект ошибки
-    // @PostConditions:
-    // - логирует ошибку и показывает уведомление
-    // PURPOSE: Централизованная обработка ошибок API.
+    /**
+     * ANCHOR: HANDLE_ERROR
+     * PURPOSE: Централизованная обработка ошибок API.
+     * 
+     * @PreConditions:
+     * - error объект ошибки
+     * 
+     * @PostConditions:
+     * - логирует ошибку и показывает уведомление
+     * 
+     * @Invariants:
+     * - всегда показывает уведомление
+     * 
+     * @SideEffects:
+     * - console.error
+     * - showNotification
+     * - логирование операции
+     * 
+     * @ForbiddenChanges:
+     * - извлечение detail/message из ошибки
+     */
     handleError(error) {
+        logLine("main", "DEBUG", "handleError", "HANDLE_ERROR", "ENTRY", {
+            "error_type": error.constructor.name
+        });
+        
         console.error('Error:', error);
         
         if (error instanceof APIError) {
             const message = error.data?.detail || 
                            error.data?.message || 
                            'Произошла ошибка';
+            
+            logLine("main", "ERROR", "handleError", "HANDLE_ERROR", "ERROR", {
+                "reason": "api_error",
+                "status": error.status,
+                "message": message
+            });
+            
             Utils.showNotification(message, 'error');
         } else {
+            logLine("main", "ERROR", "handleError", "HANDLE_ERROR", "ERROR", {
+                "reason": "unknown_error",
+                "message": error.message
+            });
+            
             Utils.showNotification('Произошла ошибка при выполнении запроса', 'error');
         }
+        
+        logLine("main", "DEBUG", "handleError", "HANDLE_ERROR", "EXIT", {
+            "result": "handled"
+        });
     },
     // [END_HANDLE_ERROR]
 
@@ -190,15 +332,38 @@ const Utils = {
      * @returns {string|null}
      */
     // [START_GET_URL_PARAM]
-    // ANCHOR: GET_URL_PARAM
-    // @PreConditions:
-    // - name строка имени параметра
-    // @PostConditions:
-    // - возвращает значение параметра или null
-    // PURPOSE: Получение query-параметра из URL.
+    /**
+     * ANCHOR: GET_URL_PARAM
+     * PURPOSE: Получение query-параметра из URL.
+     * 
+     * @PreConditions:
+     * - name строка имени параметра
+     * 
+     * @PostConditions:
+     * - возвращает значение параметра или null
+     * 
+     * @Invariants:
+     * - использует URLSearchParams
+     * 
+     * @SideEffects:
+     * - нет побочных эффектов
+     * 
+     * @ForbiddenChanges:
+     * - чтение из window.location.search
+     */
     getUrlParam(name) {
+        logLine("main", "DEBUG", "getUrlParam", "GET_URL_PARAM", "ENTRY", {
+            "param": name
+        });
+        
         const params = new URLSearchParams(window.location.search);
-        return params.get(name);
+        const result = params.get(name);
+        
+        logLine("main", "DEBUG", "getUrlParam", "GET_URL_PARAM", "EXIT", {
+            "result": result
+        });
+        
+        return result;
     },
     // [END_GET_URL_PARAM]
 
@@ -209,13 +374,26 @@ const Utils = {
      * @returns {Function}
      */
     // [START_DEBOUNCE]
-    // ANCHOR: DEBOUNCE
-    // @PreConditions:
-    // - func функция для debounce
-    // - wait время задержки в мс
-    // @PostConditions:
-    // - возвращает функцию с debounce
-    // PURPOSE: Создание функции с задержкой выполнения.
+    /**
+     * ANCHOR: DEBOUNCE
+     * PURPOSE: Создание функции с задержкой выполнения.
+     * 
+     * @PreConditions:
+     * - func функция для debounce
+     * - wait время задержки в мс
+     * 
+     * @PostConditions:
+     * - возвращает функцию с debounce
+     * 
+     * @Invariants:
+     * - только последний вызов выполняется
+     * 
+     * @SideEffects:
+     * - нет побочных эффектов при создании
+     * 
+     * @ForbiddenChanges:
+     * - стандартный паттерн debounce
+     */
     debounce(func, wait) {
         let timeout;
         return function executedFunction(...args) {
@@ -237,20 +415,37 @@ const Utils = {
  * @returns {string}
  */
 // [START_CREATE_COURSE_CARD]
-// ANCHOR: CREATE_COURSE_CARD
-// @PreConditions:
-// - course объект с id, title, description, status, modules_count
-// @PostConditions:
-// - возвращает HTML строку карточки курса
-// PURPOSE: Создание HTML карточки курса для списка.
+/**
+ * ANCHOR: CREATE_COURSE_CARD
+ * PURPOSE: Создание HTML карточки курса для списка.
+ * 
+ * @PreConditions:
+ * - course объект с id, title, description, status, modules_count
+ * 
+ * @PostConditions:
+ * - возвращает HTML строку карточки курса
+ * 
+ * @Invariants:
+ * - всегда возвращает валидный HTML
+ * 
+ * @SideEffects:
+ * - нет побочных эффектов (чистая функция)
+ * 
+ * @ForbiddenChanges:
+ * - структура карточки курса
+ */
 function createCourseCard(course) {
+    logLine("main", "DEBUG", "createCourseCard", "CREATE_COURSE_CARD", "ENTRY", {
+        "course_id": course.id
+    });
+    
     const statusBadge = course.status === 'published' 
         ? '<span class="badge badge-success">Опубликовано</span>'
         : course.status === 'draft'
         ? '<span class="badge badge-warning">Черновик</span>'
         : '<span class="badge badge-secondary">Архив</span>';
 
-    return `
+    const result = `
         <div class="card course-card" data-course-id="${course.id}">
             <div class="card-header">
                 <h3 class="card-title">${course.title}</h3>
@@ -263,6 +458,12 @@ function createCourseCard(course) {
             </div>
         </div>
     `;
+    
+    logLine("main", "DEBUG", "createCourseCard", "CREATE_COURSE_CARD", "EXIT", {
+        "result": "html_created"
+    });
+    
+    return result;
 }
 // [END_CREATE_COURSE_CARD]
 
@@ -272,20 +473,37 @@ function createCourseCard(course) {
  * @returns {string}
  */
 // [START_CREATE_BOOKING_CARD]
-// ANCHOR: CREATE_BOOKING_CARD
-// @PreConditions:
-// - booking объект с id, title, resource_name, start_time, end_time, status
-// @PostConditions:
-// - возвращает HTML строку карточки бронирования
-// PURPOSE: Создание HTML карточки бронирования для списка.
+/**
+ * ANCHOR: CREATE_BOOKING_CARD
+ * PURPOSE: Создание HTML карточки бронирования для списка.
+ * 
+ * @PreConditions:
+ * - booking объект с id, title, resource_name, start_time, end_time, status
+ * 
+ * @PostConditions:
+ * - возвращает HTML строку карточки бронирования
+ * 
+ * @Invariants:
+ * - всегда возвращает валидный HTML
+ * 
+ * @SideEffects:
+ * - нет побочных эффектов (чистая функция)
+ * 
+ * @ForbiddenChanges:
+ * - структура карточки бронирования
+ */
 function createBookingCard(booking) {
+    logLine("main", "DEBUG", "createBookingCard", "CREATE_BOOKING_CARD", "ENTRY", {
+        "booking_id": booking.id
+    });
+    
     const statusBadge = booking.status === 'confirmed'
         ? '<span class="badge badge-success">Подтверждено</span>'
         : booking.status === 'pending'
         ? '<span class="badge badge-warning">Ожидание</span>'
         : '<span class="badge badge-error">Отменено</span>';
 
-    return `
+    const result = `
         <div class="card booking-card" data-booking-id="${booking.id}">
             <div class="card-header">
                 <h3 class="card-title">${booking.title}</h3>
@@ -301,6 +519,12 @@ function createBookingCard(booking) {
             </div>
         </div>
     `;
+    
+    logLine("main", "DEBUG", "createBookingCard", "CREATE_BOOKING_CARD", "EXIT", {
+        "result": "html_created"
+    });
+    
+    return result;
 }
 // [END_CREATE_BOOKING_CARD]
 
@@ -310,13 +534,31 @@ function createBookingCard(booking) {
  * @returns {string}
  */
 // [START_CREATE_PROGRESS_ITEM]
-// ANCHOR: CREATE_PROGRESS_ITEM
-// @PreConditions:
-// - progress объект с id, module_title, course_title, status, score, completed_at
-// @PostConditions:
-// - возвращает HTML строку элемента прогресса
-// PURPOSE: Создание HTML элемента прогресса для списка.
+/**
+ * ANCHOR: CREATE_PROGRESS_ITEM
+ * PURPOSE: Создание HTML элемента прогресса для списка.
+ * 
+ * @PreConditions:
+ * - progress объект с id, module_title, course_title, status, score, completed_at
+ * 
+ * @PostConditions:
+ * - возвращает HTML строку элемента прогресса
+ * 
+ * @Invariants:
+ * - всегда возвращает валидный HTML
+ * - progress bar показывается только для in_progress/completed
+ * 
+ * @SideEffects:
+ * - нет побочных эффектов (чистая функция)
+ * 
+ * @ForbiddenChanges:
+ * - структура элемента прогресса
+ */
 function createProgressItem(progress) {
+    logLine("main", "DEBUG", "createProgressItem", "CREATE_PROGRESS_ITEM", "ENTRY", {
+        "progress_id": progress.id
+    });
+    
     const statusBadge = progress.status === 'completed'
         ? '<span class="badge badge-success">Завершен</span>'
         : progress.status === 'in_progress'
@@ -329,7 +571,7 @@ function createProgressItem(progress) {
            </div>`
         : '';
 
-    return `
+    const result = `
         <div class="card progress-item" data-progress-id="${progress.id}">
             <div class="card-header">
                 <h3 class="card-title">${progress.module_title}</h3>
@@ -342,6 +584,12 @@ function createProgressItem(progress) {
             ${progressBar}
         </div>
     `;
+    
+    logLine("main", "DEBUG", "createProgressItem", "CREATE_PROGRESS_ITEM", "EXIT", {
+        "result": "html_created"
+    });
+    
+    return result;
 }
 // [END_CREATE_PROGRESS_ITEM]
 
@@ -349,13 +597,32 @@ function createProgressItem(progress) {
  * Инициализация страницы
  */
 // [START_DOM_CONTENT_LOADED]
-// ANCHOR: DOM_CONTENT_LOADED
-// @PreConditions:
-// - DOM загружен
-// @PostConditions:
-// - добавляет стили анимаций, обновляет UI аутентификации
-// PURPOSE: Инициализация приложения при загрузке страницы.
+/**
+ * ANCHOR: DOM_CONTENT_LOADED
+ * PURPOSE: Инициализация приложения при загрузке страницы.
+ * 
+ * @PreConditions:
+ * - DOM загружен
+ * 
+ * @PostConditions:
+ * - добавляет стили анимаций, обновляет UI аутентификации
+ * 
+ * @Invariants:
+ * - всегда добавляет стили для анимаций
+ * - всегда вызывает auth.updateUI если auth доступен
+ * 
+ * @SideEffects:
+ * - добавление стилей в head
+ * - вызов auth.updateUI()
+ * - console.log
+ * - логирование операции
+ * 
+ * @ForbiddenChanges:
+ * - стили анимаций и компонентов
+ */
 document.addEventListener('DOMContentLoaded', () => {
+    logLine("main", "DEBUG", "DOMContentLoaded", "DOM_CONTENT_LOADED", "ENTRY", {});
+    
     // Добавляем стили для анимаций
     const style = document.createElement('style');
     style.textContent = `
@@ -412,13 +679,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     `;
     document.head.appendChild(style);
+    
+    logLine("main", "DEBUG", "DOMContentLoaded", "DOM_CONTENT_LOADED", "STATE_CHANGE", {
+        "action": "styles_added"
+    });
 
     // Обновляем UI аутентификации
     if (window.auth) {
         auth.updateUI();
+        logLine("main", "DEBUG", "DOMContentLoaded", "DOM_CONTENT_LOADED", "BRANCH", {
+            "branch": "auth_ui_updated"
+        });
     }
 
     console.log('LMS System initialized');
+    
+    logLine("main", "INFO", "DOMContentLoaded", "DOM_CONTENT_LOADED", "STATE_CHANGE", {
+        "action": "app_initialized"
+    });
+    logLine("main", "DEBUG", "DOMContentLoaded", "DOM_CONTENT_LOADED", "EXIT", {
+        "result": "success"
+    });
 });
 // [END_DOM_CONTENT_LOADED]
 

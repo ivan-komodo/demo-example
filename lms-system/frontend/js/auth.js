@@ -11,24 +11,59 @@
  * Auth class
  */
 // [START_AUTH_CLASS]
-// ANCHOR: AUTH_CLASS
-// @PreConditions:
-// - нет нетривиальных предусловий
-// @PostConditions:
-// - создаёт экземпляр с методами для управления аутентификацией
-// PURPOSE: Класс для управления аутентификацией пользователя.
+/**
+ * ANCHOR: AUTH_CLASS
+ * PURPOSE: Класс для управления аутентификацией пользователя.
+ * 
+ * @PreConditions:
+ * - нет нетривиальных предусловий
+ * 
+ * @PostConditions:
+ * - создаёт экземпляр с методами для управления аутентификацией
+ * 
+ * @Invariants:
+ * - user и isAuthenticated синхронизированы
+ * - данные синхронизированы с localStorage
+ * 
+ * @SideEffects:
+ * - чтение/запись localStorage
+ * - HTTP запросы через API
+ * 
+ * @ForbiddenChanges:
+ * - вызов init() в конструкторе
+ */
 class Auth {
     // [START_AUTH_CONSTRUCTOR]
-    // ANCHOR: AUTH_CONSTRUCTOR
-    // @PreConditions:
-    // - нет нетривиальных предусловий
-    // @PostConditions:
-    // - инициализирует user=null, isAuthenticated=false, вызывает init()
-    // PURPOSE: Инициализация модуля аутентификации.
+    /**
+     * ANCHOR: AUTH_CONSTRUCTOR
+     * PURPOSE: Инициализация модуля аутентификации.
+     * 
+     * @PreConditions:
+     * - нет нетривиальных предусловий
+     * 
+     * @PostConditions:
+     * - инициализирует user=null, isAuthenticated=false, вызывает init()
+     * 
+     * @Invariants:
+     * - начальное состояние всегда logged out
+     * 
+     * @SideEffects:
+     * - вызывает init() для проверки токенов
+     * - логирование операции
+     * 
+     * @ForbiddenChanges:
+     * - начальные значения user=null, isAuthenticated=false
+     */
     constructor() {
+        logLine("auth", "DEBUG", "constructor", "AUTH_CONSTRUCTOR", "ENTRY", {});
+        
         this.user = null;
         this.isAuthenticated = false;
         this.init();
+        
+        logLine("auth", "DEBUG", "constructor", "AUTH_CONSTRUCTOR", "EXIT", {
+            "result": "initialized"
+        });
     }
     // [END_AUTH_CONSTRUCTOR]
 
@@ -36,23 +71,57 @@ class Auth {
      * Инициализация модуля аутентификации
      */
     // [START_AUTH_INIT]
-    // ANCHOR: AUTH_INIT
-    // @PreConditions:
-    // - нет нетривиальных предусловий
-    // @PostConditions:
-    // - проверяет токены и восстанавливает сессию если возможно
-    // PURPOSE: Автоматическая инициализация при загрузке страницы.
+    /**
+     * ANCHOR: AUTH_INIT
+     * PURPOSE: Автоматическая инициализация при загрузке страницы.
+     * 
+     * @PreConditions:
+     * - нет нетривиальных предусловий
+     * 
+     * @PostConditions:
+     * - проверяет токены и восстанавливает сессию если возможно
+     * 
+     * @Invariants:
+     * - при наличии токенов пытается восстановить сессию
+     * - UI обновляется в конце
+     * 
+     * @SideEffects:
+     * - чтение из localStorage
+     * - возможный HTTP запрос для проверки auth
+     * - обновление UI
+     * - логирование операции
+     * 
+     * @ForbiddenChanges:
+     * - вызов updateUI() в конце
+     */
     async init() {
+        logLine("auth", "DEBUG", "init", "AUTH_INIT", "ENTRY", {});
+        
         // Проверяем наличие токенов
         const accessToken = localStorage.getItem('access_token');
         const refreshToken = localStorage.getItem('refresh_token');
 
         if (accessToken && refreshToken) {
+            logLine("auth", "DEBUG", "init", "AUTH_INIT", "BRANCH", {
+                "branch": "tokens_found",
+                "has_access": !!accessToken,
+                "has_refresh": !!refreshToken
+            });
+            
             api.setAccessToken(accessToken);
             await this.checkAuth();
+        } else {
+            logLine("auth", "DEBUG", "init", "AUTH_INIT", "BRANCH", {
+                "branch": "no_tokens"
+            });
         }
 
         this.updateUI();
+        
+        logLine("auth", "DEBUG", "init", "AUTH_INIT", "EXIT", {
+            "result": "completed",
+            "isAuthenticated": this.isAuthenticated
+        });
     }
     // [END_AUTH_INIT]
 
@@ -61,23 +130,55 @@ class Auth {
      * @returns {Promise<boolean>}
      */
     // [START_CHECK_AUTH]
-    // ANCHOR: CHECK_AUTH
-    // @PreConditions:
-    // - access токен установлен в api
-    // @PostConditions:
-    // - при успехе устанавливает user и isAuthenticated=true
-    // - при неудаче вызывает logout
-    // PURPOSE: Проверка валидности текущей сессии.
+    /**
+     * ANCHOR: CHECK_AUTH
+     * PURPOSE: Проверка валидности текущей сессии.
+     * 
+     * @PreConditions:
+     * - access токен установлен в api
+     * 
+     * @PostConditions:
+     * - при успехе устанавливает user и isAuthenticated=true
+     * - при неудаче вызывает logout
+     * 
+     * @Invariants:
+     * - при неудаче всегда очищает состояние
+     * 
+     * @SideEffects:
+     * - HTTP запрос к /auth/me/
+     * - запись user в localStorage
+     * - логирование операции
+     * 
+     * @ForbiddenChanges:
+     * - при неудаче вызов logout()
+     */
     async checkAuth() {
+        logLine("auth", "DEBUG", "checkAuth", "CHECK_AUTH", "ENTRY", {});
+        
         try {
             const user = await API.me();
             this.user = user;
             this.isAuthenticated = true;
             localStorage.setItem('user', JSON.stringify(user));
+            
+            logLine("auth", "INFO", "checkAuth", "CHECK_AUTH", "STATE_CHANGE", {
+                "action": "session_restored",
+                "user_id": user.id
+            });
+            logLine("auth", "DEBUG", "checkAuth", "CHECK_AUTH", "EXIT", {
+                "result": "authenticated",
+                "user_id": user.id
+            });
             return true;
         } catch (error) {
-            console.error('Auth check failed:', error);
+            logLine("auth", "WARN", "checkAuth", "CHECK_AUTH", "ERROR", {
+                "reason": "auth_check_failed",
+                "error": error.message
+            });
             this.logout();
+            logLine("auth", "DEBUG", "checkAuth", "CHECK_AUTH", "EXIT", {
+                "result": "failed"
+            });
             return false;
         }
     }
@@ -90,15 +191,37 @@ class Auth {
      * @returns {Promise<Object>}
      */
     // [START_LOGIN]
-    // ANCHOR: LOGIN
-    // @PreConditions:
-    // - email валидный email адрес
-    // - password непустая строка
-    // @PostConditions:
-    // - при успехе сохраняет токены и user, обновляет UI
-    // - при неудаче выбрасывает ошибку
-    // PURPOSE: Аутентификация пользователя по email и паролю.
+    /**
+     * ANCHOR: LOGIN
+     * PURPOSE: Аутентификация пользователя по email и паролю.
+     * 
+     * @PreConditions:
+     * - email валидный email адрес
+     * - password непустая строка
+     * 
+     * @PostConditions:
+     * - при успехе сохраняет токены и user, обновляет UI
+     * - при неудаче выбрасывает ошибку
+     * 
+     * @Invariants:
+     * - при успехе isAuthenticated=true
+     * - токены и user сохраняются в localStorage
+     * 
+     * @SideEffects:
+     * - HTTP запрос к /auth/login/
+     * - HTTP запрос к /auth/me/
+     * - запись в localStorage
+     * - обновление UI
+     * - логирование операции
+     * 
+     * @ForbiddenChanges:
+     * - порядок: login -> setTokens -> me -> saveUser -> updateUI
+     */
     async login(email, password) {
+        logLine("auth", "DEBUG", "login", "LOGIN", "ENTRY", {
+            "email": email
+        });
+        
         try {
             const response = await API.login({ email, password });
             
@@ -113,9 +236,26 @@ class Auth {
             
             this.updateUI();
             
+            logLine("auth", "INFO", "login", "LOGIN", "STATE_CHANGE", {
+                "action": "user_logged_in",
+                "user_id": user.id,
+                "email": email
+            });
+            logLine("auth", "DEBUG", "login", "LOGIN", "EXIT", {
+                "result": "success",
+                "user_id": user.id
+            });
+            
             return { success: true, user };
         } catch (error) {
-            console.error('Login failed:', error);
+            logLine("auth", "ERROR", "login", "LOGIN", "ERROR", {
+                "reason": "login_failed",
+                "email": email,
+                "error": error.message
+            });
+            logLine("auth", "DEBUG", "login", "LOGIN", "EXIT", {
+                "result": "failed"
+            });
             throw error;
         }
     }
@@ -127,14 +267,36 @@ class Auth {
      * @returns {Promise<Object>}
      */
     // [START_REGISTER]
-    // ANCHOR: REGISTER
-    // @PreConditions:
-    // - data содержит email, password, full_name
-    // @PostConditions:
-    // - при успехе сохраняет токены и user, обновляет UI
-    // - при неудаче выбрасывает ошибку
-    // PURPOSE: Регистрация нового пользователя.
+    /**
+     * ANCHOR: REGISTER
+     * PURPOSE: Регистрация нового пользователя.
+     * 
+     * @PreConditions:
+     * - data содержит email, password, full_name
+     * 
+     * @PostConditions:
+     * - при успехе сохраняет токены и user, обновляет UI
+     * - при неудаче выбрасывает ошибку
+     * 
+     * @Invariants:
+     * - при успехе isAuthenticated=true
+     * - токены и user сохраняются в localStorage
+     * 
+     * @SideEffects:
+     * - HTTP запрос к /auth/register/
+     * - HTTP запрос к /auth/me/
+     * - запись в localStorage
+     * - обновление UI
+     * - логирование операции
+     * 
+     * @ForbiddenChanges:
+     * - порядок: register -> setTokens -> me -> saveUser -> updateUI
+     */
     async register(data) {
+        logLine("auth", "DEBUG", "register", "REGISTER", "ENTRY", {
+            "email": data.email
+        });
+        
         try {
             const response = await API.register(data);
             
@@ -149,9 +311,26 @@ class Auth {
             
             this.updateUI();
             
+            logLine("auth", "INFO", "register", "REGISTER", "STATE_CHANGE", {
+                "action": "user_registered",
+                "user_id": user.id,
+                "email": data.email
+            });
+            logLine("auth", "DEBUG", "register", "REGISTER", "EXIT", {
+                "result": "success",
+                "user_id": user.id
+            });
+            
             return { success: true, user };
         } catch (error) {
-            console.error('Registration failed:', error);
+            logLine("auth", "ERROR", "register", "REGISTER", "ERROR", {
+                "reason": "register_failed",
+                "email": data.email,
+                "error": error.message
+            });
+            logLine("auth", "DEBUG", "register", "REGISTER", "EXIT", {
+                "result": "failed"
+            });
             throw error;
         }
     }
@@ -161,22 +340,54 @@ class Auth {
      * Выход из системы
      */
     // [START_LOGOUT]
-    // ANCHOR: LOGOUT
-    // @PreConditions:
-    // - нет нетривиальных предусловий
-    // @PostConditions:
-    // - очищает токены, user, isAuthenticated, перенаправляет на login
-    // PURPOSE: Завершение сессии пользователя.
+    /**
+     * ANCHOR: LOGOUT
+     * PURPOSE: Завершение сессии пользователя.
+     * 
+     * @PreConditions:
+     * - нет нетривиальных предусловий
+     * 
+     * @PostConditions:
+     * - очищает токены, user, isAuthenticated, перенаправляет на login
+     * 
+     * @Invariants:
+     * - всегда очищает состояние, даже при ошибке API
+     * 
+     * @SideEffects:
+     * - HTTP запрос к /auth/logout/
+     * - очистка localStorage
+     * - редирект на /login.html
+     * - логирование операции
+     * 
+     * @ForbiddenChanges:
+     * - очистка состояния в finally блоке
+     * - редирект на /login.html
+     */
     async logout() {
+        logLine("auth", "DEBUG", "logout", "LOGOUT", "ENTRY", {
+            "user_id": this.user?.id
+        });
+        
         try {
             await API.logout();
         } catch (error) {
-            console.error('Logout error:', error);
+            logLine("auth", "WARN", "logout", "LOGOUT", "ERROR", {
+                "reason": "logout_api_error",
+                "error": error.message
+            });
         } finally {
             api.clearTokens();
             this.user = null;
             this.isAuthenticated = false;
             this.updateUI();
+            
+            logLine("auth", "INFO", "logout", "LOGOUT", "STATE_CHANGE", {
+                "action": "user_logged_out"
+            });
+            logLine("auth", "DEBUG", "logout", "LOGOUT", "EXIT", {
+                "result": "success"
+            });
+            
             window.location.href = '/login.html';
         }
     }
@@ -187,23 +398,50 @@ class Auth {
      * @returns {Object|null}
      */
     // [START_GET_USER]
-    // ANCHOR: GET_USER
-    // @PreConditions:
-    // - нет нетривиальных предусловий
-    // @PostConditions:
-    // - возвращает user из памяти или localStorage
-    // PURPOSE: Получение данных текущего пользователя.
+    /**
+     * ANCHOR: GET_USER
+     * PURPOSE: Получение данных текущего пользователя.
+     * 
+     * @PreConditions:
+     * - нет нетривиальных предусловий
+     * 
+     * @PostConditions:
+     * - возвращает user из памяти или localStorage
+     * 
+     * @Invariants:
+     * - при отсутствии в памяти ищет в localStorage
+     * 
+     * @SideEffects:
+     * - чтение из localStorage
+     * - логирование операции
+     * 
+     * @ForbiddenChanges:
+     * - fallback на localStorage
+     */
     getUser() {
+        logLine("auth", "DEBUG", "getUser", "GET_USER", "ENTRY", {});
+        
         if (!this.user) {
             const userStr = localStorage.getItem('user');
             if (userStr) {
                 try {
                     this.user = JSON.parse(userStr);
+                    logLine("auth", "DEBUG", "getUser", "GET_USER", "BRANCH", {
+                        "branch": "loaded_from_storage"
+                    });
                 } catch (e) {
                     this.user = null;
+                    logLine("auth", "WARN", "getUser", "GET_USER", "ERROR", {
+                        "reason": "parse_error"
+                    });
                 }
             }
         }
+        
+        logLine("auth", "DEBUG", "getUser", "GET_USER", "EXIT", {
+            "result": this.user ? "found" : "not_found"
+        });
+        
         return this.user;
     }
     // [END_GET_USER]
@@ -214,15 +452,39 @@ class Auth {
      * @returns {boolean}
      */
     // [START_HAS_ROLE]
-    // ANCHOR: HAS_ROLE
-    // @PreConditions:
-    // - role строка роли (admin, trainer, learner)
-    // @PostConditions:
-    // - возвращает true если user.role совпадает с role
-    // PURPOSE: Проверка роли текущего пользователя.
+    /**
+     * ANCHOR: HAS_ROLE
+     * PURPOSE: Проверка роли текущего пользователя.
+     * 
+     * @PreConditions:
+     * - role строка роли (admin, trainer, learner)
+     * 
+     * @PostConditions:
+     * - возвращает true если user.role совпадает с role
+     * 
+     * @Invariants:
+     * - при отсутствии user возвращает false
+     * 
+     * @SideEffects:
+     * - логирование операции
+     * 
+     * @ForbiddenChanges:
+     * - строгое равенство role
+     */
     hasRole(role) {
+        logLine("auth", "DEBUG", "hasRole", "HAS_ROLE", "ENTRY", {
+            "required_role": role
+        });
+        
         const user = this.getUser();
-        return user && user.role === role;
+        const result = user && user.role === role;
+        
+        logLine("auth", "DEBUG", "hasRole", "HAS_ROLE", "EXIT", {
+            "result": result,
+            "user_role": user?.role
+        });
+        
+        return result;
     }
     // [END_HAS_ROLE]
 
@@ -231,12 +493,25 @@ class Auth {
      * @returns {boolean}
      */
     // [START_IS_ADMIN]
-    // ANCHOR: IS_ADMIN
-    // @PreConditions:
-    // - нет нетривиальных предусловий
-    // @PostConditions:
-    // - возвращает true если user.role === 'admin'
-    // PURPOSE: Проверка роли администратора.
+    /**
+     * ANCHOR: IS_ADMIN
+     * PURPOSE: Проверка роли администратора.
+     * 
+     * @PreConditions:
+     * - нет нетривиальных предусловий
+     * 
+     * @PostConditions:
+     * - возвращает true если user.role === 'admin'
+     * 
+     * @Invariants:
+     * - делегирует в hasRole
+     * 
+     * @SideEffects:
+     * - нет побочных эффектов
+     * 
+     * @ForbiddenChanges:
+     * - проверка role === 'admin'
+     */
     isAdmin() {
         return this.hasRole('admin');
     }
@@ -247,12 +522,25 @@ class Auth {
      * @returns {boolean}
      */
     // [START_IS_TRAINER]
-    // ANCHOR: IS_TRAINER
-    // @PreConditions:
-    // - нет нетривиальных предусловий
-    // @PostConditions:
-    // - возвращает true если user.role === 'trainer'
-    // PURPOSE: Проверка роли тренера.
+    /**
+     * ANCHOR: IS_TRAINER
+     * PURPOSE: Проверка роли тренера.
+     * 
+     * @PreConditions:
+     * - нет нетривиальных предусловий
+     * 
+     * @PostConditions:
+     * - возвращает true если user.role === 'trainer'
+     * 
+     * @Invariants:
+     * - делегирует в hasRole
+     * 
+     * @SideEffects:
+     * - нет побочных эффектов
+     * 
+     * @ForbiddenChanges:
+     * - проверка role === 'trainer'
+     */
     isTrainer() {
         return this.hasRole('trainer');
     }
@@ -263,12 +551,25 @@ class Auth {
      * @returns {boolean}
      */
     // [START_IS_LEARNER]
-    // ANCHOR: IS_LEARNER
-    // @PreConditions:
-    // - нет нетривиальных предусловий
-    // @PostConditions:
-    // - возвращает true если user.role === 'learner'
-    // PURPOSE: Проверка роли обучающегося.
+    /**
+     * ANCHOR: IS_LEARNER
+     * PURPOSE: Проверка роли обучающегося.
+     * 
+     * @PreConditions:
+     * - нет нетривиальных предусловий
+     * 
+     * @PostConditions:
+     * - возвращает true если user.role === 'learner'
+     * 
+     * @Invariants:
+     * - делегирует в hasRole
+     * 
+     * @SideEffects:
+     * - нет побочных эффектов
+     * 
+     * @ForbiddenChanges:
+     * - проверка role === 'learner'
+     */
     isLearner() {
         return this.hasRole('learner');
     }
@@ -278,13 +579,32 @@ class Auth {
      * Обновить UI в зависимости от состояния аутентификации
      */
     // [START_UPDATE_UI]
-    // ANCHOR: UPDATE_UI
-    // @PreConditions:
-    // - DOM элементы с id auth-buttons, user-menu, user-name существуют
-    // @PostConditions:
-    // - показывает/скрывает элементы в зависимости от isAuthenticated
-    // PURPOSE: Обновление интерфейса при изменении состояния аутентификации.
+    /**
+     * ANCHOR: UPDATE_UI
+     * PURPOSE: Обновление интерфейса при изменении состояния аутентификации.
+     * 
+     * @PreConditions:
+     * - DOM элементы с id auth-buttons, user-menu, user-name существуют
+     * 
+     * @PostConditions:
+     * - показывает/скрывает элементы в зависимости от isAuthenticated
+     * 
+     * @Invariants:
+     * - при authenticated показывается user-menu
+     * - при not authenticated показывается auth-buttons
+     * 
+     * @SideEffects:
+     * - изменение DOM
+     * - логирование операции
+     * 
+     * @ForbiddenChanges:
+     * - элементы: auth-buttons, user-menu, user-name, progress-link, bookings-link
+     */
     updateUI() {
+        logLine("auth", "DEBUG", "updateUI", "UPDATE_UI", "ENTRY", {
+            "isAuthenticated": this.isAuthenticated
+        });
+        
         const authButtons = document.getElementById('auth-buttons');
         const userMenu = document.getElementById('user-menu');
         const userName = document.getElementById('user-name');
@@ -306,13 +626,25 @@ class Auth {
             // Показываем ссылки в зависимости от роли
             if (progressLink) progressLink.style.display = 'inline';
             if (bookingsLink) bookingsLink.style.display = 'inline';
+            
+            logLine("auth", "DEBUG", "updateUI", "UPDATE_UI", "BRANCH", {
+                "branch": "authenticated_ui"
+            });
         } else {
             // Показываем кнопки входа/регистрации
             if (authButtons) authButtons.style.display = 'flex';
             if (userMenu) userMenu.style.display = 'none';
             if (progressLink) progressLink.style.display = 'none';
             if (bookingsLink) bookingsLink.style.display = 'none';
+            
+            logLine("auth", "DEBUG", "updateUI", "UPDATE_UI", "BRANCH", {
+                "branch": "unauthenticated_ui"
+            });
         }
+        
+        logLine("auth", "DEBUG", "updateUI", "UPDATE_UI", "EXIT", {
+            "result": "updated"
+        });
     }
     // [END_UPDATE_UI]
 
@@ -323,24 +655,62 @@ class Auth {
      * @returns {boolean}
      */
     // [START_REQUIRE_AUTH]
-    // ANCHOR: REQUIRE_AUTH
-    // @PreConditions:
-    // - requiredRole опциональная строка роли
-    // @PostConditions:
-    // - возвращает true если пользователь аутентифицирован и имеет роль
-    // - перенаправляет на login или показывает access denied
-    // PURPOSE: Защита страниц от неавторизованного доступа.
+    /**
+     * ANCHOR: REQUIRE_AUTH
+     * PURPOSE: Защита страниц от неавторизованного доступа.
+     * 
+     * @PreConditions:
+     * - requiredRole опциональная строка роли
+     * 
+     * @PostConditions:
+     * - возвращает true если пользователь аутентифицирован и имеет роль
+     * - перенаправляет на login или показывает access denied
+     * 
+     * @Invariants:
+     * - при отсутствии auth редирект на login
+     * - при отсутствии роли показывает access denied
+     * 
+     * @SideEffects:
+     * - возможный редирект на /login.html
+     * - возможное изменение DOM (access denied)
+     * - логирование операции
+     * 
+     * @ForbiddenChanges:
+     * - редирект на /login.html при неаутентифицированном
+     */
     requireAuth(requiredRole = null) {
+        logLine("auth", "DEBUG", "requireAuth", "REQUIRE_AUTH", "ENTRY", {
+            "requiredRole": requiredRole
+        });
+        
         if (!this.isAuthenticated) {
+            logLine("auth", "WARN", "requireAuth", "REQUIRE_AUTH", "DECISION", {
+                "decision": "redirect_to_login",
+                "reason": "not_authenticated"
+            });
+            logLine("auth", "DEBUG", "requireAuth", "REQUIRE_AUTH", "EXIT", {
+                "result": "redirect_login"
+            });
             window.location.href = '/login.html';
             return false;
         }
 
         if (requiredRole && !this.hasRole(requiredRole)) {
+            logLine("auth", "WARN", "requireAuth", "REQUIRE_AUTH", "DECISION", {
+                "decision": "access_denied",
+                "required": requiredRole,
+                "actual": this.user?.role
+            });
+            logLine("auth", "DEBUG", "requireAuth", "REQUIRE_AUTH", "EXIT", {
+                "result": "access_denied"
+            });
             this.showAccessDenied();
             return false;
         }
 
+        logLine("auth", "DEBUG", "requireAuth", "REQUIRE_AUTH", "EXIT", {
+            "result": "authorized"
+        });
         return true;
     }
     // [END_REQUIRE_AUTH]
@@ -349,13 +719,29 @@ class Auth {
      * Показать сообщение об отказе в доступе
      */
     // [START_SHOW_ACCESS_DENIED]
-    // ANCHOR: SHOW_ACCESS_DENIED
-    // @PreConditions:
-    // - DOM элемент .main существует
-    // @PostConditions:
-    // - заменяет содержимое .main сообщением о доступе запрещён
-    // PURPOSE: Отображение сообщения об отсутствии прав.
+    /**
+     * ANCHOR: SHOW_ACCESS_DENIED
+     * PURPOSE: Отображение сообщения об отсутствии прав.
+     * 
+     * @PreConditions:
+     * - DOM элемент .main существует
+     * 
+     * @PostConditions:
+     * - заменяет содержимое .main сообщением о доступе запрещён
+     * 
+     * @Invariants:
+     * - всегда показывает одинаковое сообщение
+     * 
+     * @SideEffects:
+     * - изменение DOM
+     * - логирование операции
+     * 
+     * @ForbiddenChanges:
+     * - HTML структура сообщения
+     */
     showAccessDenied() {
+        logLine("auth", "DEBUG", "showAccessDenied", "SHOW_ACCESS_DENIED", "ENTRY", {});
+        
         const main = document.querySelector('.main');
         if (main) {
             main.innerHTML = `
@@ -367,7 +753,15 @@ class Auth {
                     </div>
                 </div>
             `;
+            
+            logLine("auth", "INFO", "showAccessDenied", "SHOW_ACCESS_DENIED", "STATE_CHANGE", {
+                "action": "access_denied_shown"
+            });
         }
+        
+        logLine("auth", "DEBUG", "showAccessDenied", "SHOW_ACCESS_DENIED", "EXIT", {
+            "result": "shown"
+        });
     }
     // [END_SHOW_ACCESS_DENIED]
 }
