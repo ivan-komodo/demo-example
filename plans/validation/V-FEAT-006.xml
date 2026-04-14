@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation-report 
+  feature-id="FEAT-006"
+  feature-name="Бронирование ресурсов"
+  date="2026-04-14"
+  validator="grace-validate-plan">
+  
+  <status>pass</status>
+  <summary>Feature Specification соответствует требованиям GRACE. 2 контракта, все полные. Зависимости корректны.</summary>
+  
+  <completeness>
+    <section name="description" status="pass">
+      <check item="present" status="pass"/>
+      <check item="clear" status="pass"/>
+      <check item="length" status="pass">1 абзац, 2 предложения</check>
+    </section>
+    
+    <section name="goal" status="pass">
+      <check item="present" status="pass"/>
+      <check item="measurable" status="pass"/>
+    </section>
+    
+    <section name="components" status="pass">
+      <check item="paths_defined" status="pass">6 новых компонентов</check>
+      <check item="types_defined" status="pass">model, viewset, service, module, page</check>
+    </section>
+    
+    <section name="contracts" status="pass">
+      <check item="all_anchors_defined" status="pass">2 anchors</check>
+      <check item="all_fields_present" status="pass"/>
+    </section>
+    
+    <section name="acceptance" status="pass">
+      <check item="user_stories_defined" status="pass">2 user stories</check>
+      <check item="criteria_measurable" status="pass">Все критерии измеримы</check>
+    </section>
+    
+    <section name="test-plan" status="pass">
+      <check item="present" status="pass"/>
+      <check item="coverage" status="pass">Unit + Trajectory</check>
+    </section>
+  </completeness>
+  
+  <contracts>
+    <contract anchor="BOOKING_CREATE">
+      <function>create_booking</function>
+      <file>backend/apps/bookings/services.py</file>
+      <has-purpose>true</has-purpose>
+      <has-preconditions>true</has-preconditions>
+      <has-postconditions>true</has-postconditions>
+      <has-invariants>true</has-invariants>
+      <has-sideeffects>true</has-sideeffects>
+      <has-forbidden-changes>true</has-forbidden-changes>
+      <issues/>
+    </contract>
+    
+    <contract anchor="BOOKING_CANCEL">
+      <function>cancel_booking</function>
+      <file>backend/apps/bookings/services.py</file>
+      <has-purpose>true</has-purpose>
+      <has-preconditions>true</has-preconditions>
+      <has-postconditions>true</has-postconditions>
+      <has-invariants>true</has-invariants>
+      <has-sideeffects>true</has-sideeffects>
+      <has-forbidden-changes>true</has-forbidden-changes>
+      <issues/>
+    </contract>
+  </contracts>
+  
+  <consistency>
+    <check name="semantic_graph_refs" status="pass">
+      Все anchors referenced:
+      - BOOKING_CREATE, BOOKING_CANCEL
+      Component: backend.apps.bookings.services
+    </check>
+    <check name="no_duplicate_anchors" status="pass"/>
+    <check name="dependencies_valid" status="pass">
+      Depends on: FEAT-001 (User), FEAT-003 (Course)
+    </check>
+    <check name="no_contradictions" status="pass">
+      Инвариант "нет пересечений по времени" соблюдается
+      PostgreSQL EXCLUDE constraint гарантирует отсутствие конфликтов
+    </check>
+  </consistency>
+  
+  <test-scenarios>
+    
+    <group level="deterministic">
+      <scenario id="SC-006-001">
+        <name>Успешное бронирование ресурса</name>
+        <description>Админ бронирует аудиторию на указанное время</description>
+        <anchor ref="BOOKING_CREATE"/>
+        <given>
+          - request.user.role == 'admin'
+          - resource_id = existing_active_resource
+          - start_time = tomorrow 10:00
+          - end_time = tomorrow 12:00
+          - нет пересечений с существующими бронированиями
+        </given>
+        <when>POST /api/bookings/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>201</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>response.data.status</actual>
+            <expected>confirmed</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-006-002">
+        <name>Ошибка - конфликт бронирований</name>
+        <description>Нельзя забронировать пересекающийся период</description>
+        <anchor ref="BOOKING_CREATE"/>
+        <given>
+          - resource уже забронирован на 10:00-12:00
+          - пытаемся забронировать 11:00-13:00 (пересечение)
+        </given>
+        <when>POST /api/bookings/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>409</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>response.data.error</actual>
+            <expected>BOOKING_CONFLICT</expected>
+          </assertion>
+          <assertion type="contains">
+            <actual>response.data</actual>
+            <expected>conflicting_bookings</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-006-003">
+        <name>Ошибка - бронирование в прошлом</name>
+        <description>Нельзя забронировать прошедшее время</description>
+        <anchor ref="BOOKING_CREATE"/>
+        <given>
+          - start_time = yesterday 10:00
+          - end_time = yesterday 12:00
+        </given>
+        <when>POST /api/bookings/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>400</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>response.data.error</actual>
+            <expected>VALIDATION_ERROR</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-006-004">
+        <name>Ошибка - start_time >= end_time</name>
+        <description>Некорректный временной интервал</description>
+        <anchor ref="BOOKING_CREATE"/>
+        <given>
+          - start_time = tomorrow 12:00
+          - end_time = tomorrow 10:00
+        </given>
+        <when>POST /api/bookings/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>400</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-006-005">
+        <name>Успешная отмена бронирования</name>
+        <description>Админ отменяет будущее бронирование</description>
+        <anchor ref="BOOKING_CANCEL"/>
+        <given>
+          - booking_id = existing_booking
+          - start_time > now()
+          - request.user == booking.user или role == 'admin'
+        </given>
+        <when>DELETE /api/bookings/{id}/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>200</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>booking.status</actual>
+            <expected>cancelled</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-006-006">
+        <name>Ошибка - отмена прошедшего бронирования</name>
+        <description>Нельзя отменить прошедшее бронирование</description>
+        <anchor ref="BOOKING_CANCEL"/>
+        <given>
+          - booking.start_time < now()
+        </given>
+        <when>DELETE /api/bookings/{id}/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>400</expected>
+          </assertion>
+        </then>
+      </scenario>
+    </group>
+    
+    <group level="trajectory">
+      <scenario id="SC-006-101">
+        <name>Проверка лог-маркеров для BOOKING_CREATE</name>
+        <anchor ref="BOOKING_CREATE"/>
+        <required-log-markers>
+          <marker point="ENTRY">
+            <pattern>[bookings][create_booking][BOOKING_CREATE][ENTRY]</pattern>
+            <must-contain>
+              <field>resource_id</field>
+              <field>start_time</field>
+              <field>end_time</field>
+            </must-contain>
+          </marker>
+          <marker point="CHECK" optional="true">
+            <pattern>[bookings][create_booking][BOOKING_CREATE][CHECK]</pattern>
+            <must-contain>
+              <field>check</field>
+              <field>result</field>
+            </must-contain>
+          </marker>
+          <marker point="EXIT">
+            <pattern>[bookings][create_booking][BOOKING_CREATE][EXIT]</pattern>
+            <must-contain>
+              <field>result</field>
+              <field>booking_id</field>
+            </must-contain>
+          </marker>
+          <marker point="ERROR" optional="true">
+            <pattern>[bookings][create_booking][BOOKING_CREATE][ERROR]</pattern>
+            <must-contain>
+              <field>reason</field>
+            </must-contain>
+          </marker>
+        </required-log-markers>
+      </scenario>
+      
+      <scenario id="SC-006-102">
+        <name>Проверка лог-маркеров для BOOKING_CANCEL</name>
+        <anchor ref="BOOKING_CANCEL"/>
+        <required-log-markers>
+          <marker point="ENTRY">
+            <pattern>[bookings][cancel_booking][BOOKING_CANCEL][ENTRY]</pattern>
+            <must-contain>
+              <field>booking_id</field>
+            </must-contain>
+          </marker>
+          <marker point="STATE_CHANGE">
+            <pattern>[bookings][cancel_booking][BOOKING_CANCEL][STATE_CHANGE]</pattern>
+            <must-contain>
+              <field>entity</field>
+              <field>from</field>
+              <field>to</field>
+            </must-contain>
+          </marker>
+          <marker point="EXIT">
+            <pattern>[bookings][cancel_booking][BOOKING_CANCEL][EXIT]</pattern>
+            <must-contain>
+              <field>result</field>
+            </must-contain>
+          </marker>
+        </required-log-markers>
+      </scenario>
+    </group>
+    
+    <group level="integration">
+      <scenario id="SC-006-201">
+        <name>E2E: Бронирование ресурса</name>
+        <description>Админ бронирует аудиторию</description>
+        <steps>
+          <step order="1">
+            <action>Админ открывает страницу бронирования</action>
+            <expected>Отображается календарь и список ресурсов</expected>
+          </step>
+          <step order="2">
+            <action>Админ выбирает ресурс и время</action>
+            <expected>Отображается форма бронирования</expected>
+          </step>
+          <step order="3">
+            <action>Админ отправляет форму</action>
+            <expected>POST /api/bookings/ возвращает 201</expected>
+            <verify-markers>
+              <marker ref="SC-006-101"/>
+            </verify-markers>
+          </step>
+          <step order="4">
+            <action>Бронирование отображается в календаре</action>
+            <expected>Событие в календаре</expected>
+          </step>
+          <step order="5">
+            <action>Тренер получает уведомление</action>
+            <expected>Notification создана</expected>
+          </step>
+        </steps>
+      </scenario>
+    </group>
+    
+  </test-scenarios>
+  
+  <recommendations>
+    <recommendation priority="medium">
+      Добавить интеграционные тесты в test-plan.
+    </recommendation>
+  </recommendations>
+  
+</validation-report>

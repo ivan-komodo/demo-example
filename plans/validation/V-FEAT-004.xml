@@ -1,0 +1,398 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation-report 
+  feature-id="FEAT-004"
+  feature-name="Тесты и попытки прохождения"
+  date="2026-04-14"
+  validator="grace-validate-plan">
+  
+  <status>pass</status>
+  <summary>Feature Specification соответствует требованиям GRACE. 4 контракта, все полные. Зависимости от FEAT-001 и FEAT-003 корректны.</summary>
+  
+  <completeness>
+    <section name="description" status="pass">
+      <check item="present" status="pass"/>
+      <check item="clear" status="pass"/>
+      <check item="length" status="pass">1 абзац, 2 предложения</check>
+    </section>
+    
+    <section name="goal" status="pass">
+      <check item="present" status="pass"/>
+      <check item="measurable" status="pass"/>
+    </section>
+    
+    <section name="components" status="pass">
+      <check item="paths_defined" status="pass">8 новых компонентов + 2 изменяемых</check>
+      <check item="types_defined" status="pass">model, viewset, service, module, page</check>
+    </section>
+    
+    <section name="contracts" status="pass">
+      <check item="all_anchors_defined" status="pass">4 anchors</check>
+      <check item="all_fields_present" status="pass"/>
+    </section>
+    
+    <section name="acceptance" status="pass">
+      <check item="user_stories_defined" status="pass">5 user stories</check>
+      <check item="criteria_measurable" status="pass">Все критерии измеримы</check>
+    </section>
+    
+    <section name="test-plan" status="pass">
+      <check item="present" status="pass"/>
+      <check item="coverage" status="pass">Unit + Integration + Trajectory</check>
+    </section>
+  </completeness>
+  
+  <contracts>
+    <contract anchor="QUIZ_CREATE">
+      <function>create_quiz</function>
+      <file>backend/apps/quizzes/services.py</file>
+      <has-purpose>true</has-purpose>
+      <has-preconditions>true</has-preconditions>
+      <has-postconditions>true</has-postconditions>
+      <has-invariants>true</has-invariants>
+      <has-sideeffects>true</has-sideeffects>
+      <has-forbidden-changes>true</has-forbidden-changes>
+      <issues/>
+    </contract>
+    
+    <contract anchor="QUIZ_ATTEMPT_START">
+      <function>start_attempt</function>
+      <file>backend/apps/quizzes/services.py</file>
+      <has-purpose>true</has-purpose>
+      <has-preconditions>true</has-preconditions>
+      <has-postconditions>true</has-postconditions>
+      <has-invariants>true</has-invariants>
+      <has-sideeffects>true</has-sideeffects>
+      <has-forbidden-changes>true</has-forbidden-changes>
+      <issues/>
+    </contract>
+    
+    <contract anchor="QUIZ_ATTEMPT_SUBMIT">
+      <function>submit_attempt</function>
+      <file>backend/apps/quizzes/services.py</file>
+      <has-purpose>true</has-purpose>
+      <has-preconditions>true</has-preconditions>
+      <has-postconditions>true</has-postconditions>
+      <has-invariants>true</has-invariants>
+      <has-sideeffects>true</has-sideeffects>
+      <has-forbidden-changes>true</has-forbidden-changes>
+      <issues/>
+    </contract>
+    
+    <contract anchor="QUIZ_SCORE_CALC">
+      <function>calculate_score</function>
+      <file>backend/apps/quizzes/services.py</file>
+      <has-purpose>true</has-purpose>
+      <has-preconditions>true</has-preconditions>
+      <has-postconditions>true</has-postconditions>
+      <has-invariants>true</has-invariants>
+      <has-sideeffects>true</has-sideeffects>
+      <has-forbidden-changes>true</has-forbidden-changes>
+      <issues/>
+    </contract>
+  </contracts>
+  
+  <consistency>
+    <check name="semantic_graph_refs" status="pass">
+      Все anchors referenced:
+      - QUIZ_CREATE, QUIZ_ATTEMPT_START, QUIZ_ATTEMPT_SUBMIT, QUIZ_SCORE_CALC
+      Component: backend.apps.quizzes.services
+    </check>
+    <check name="no_duplicate_anchors" status="pass"/>
+    <check name="dependencies_valid" status="pass">
+      Depends on: FEAT-001 (User), FEAT-003 (Module)
+      Dependents: FEAT-005 (Progress)
+    </check>
+    <check name="no_contradictions" status="pass">
+      Ограничение 3 попытки — инвариант соблюдается
+      Score формула корректна
+    </check>
+  </consistency>
+  
+  <test-scenarios>
+    
+    <group level="deterministic">
+      <scenario id="SC-004-001">
+        <name>Успешное создание вопроса single type</name>
+        <description>Админ создаёт вопрос с одним правильным ответом</description>
+        <anchor ref="QUIZ_CREATE"/>
+        <given>
+          - request.user.role == 'admin'
+          - module_id = existing_module
+          - question = 'Какой язык используется в Django?'
+          - question_type = 'single'
+          - options = [
+              { text: 'Python', is_correct: true },
+              { text: 'Java', is_correct: false },
+              { text: 'Ruby', is_correct: false }
+            ]
+        </given>
+        <when>POST /api/quizzes/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>201</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>response.data.question_type</actual>
+            <expected>single</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>response.data.options.length</actual>
+            <expected>3</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-004-002">
+        <name>Ошибка - нет правильного ответа</name>
+        <description>Нельзя создать вопрос без правильного ответа</description>
+        <anchor ref="QUIZ_CREATE"/>
+        <given>
+          - question_type = 'single'
+          - все options имеют is_correct = false
+        </given>
+        <when>POST /api/quizzes/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>400</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>response.data.error</actual>
+            <expected>VALIDATION_ERROR</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-004-003">
+        <name>Успешное начало попытки</name>
+        <description>Пользователь начинает попытку теста</description>
+        <anchor ref="QUIZ_ATTEMPT_START"/>
+        <given>
+          - пользователь авторизован
+          - user записан на курс
+          - attempt_number <= 3
+          - предыдущие попытки завершены
+        </given>
+        <when>POST /api/quizzes/{id}/start/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>201</expected>
+          </assertion>
+          <assertion type="lte">
+            <actual>response.data.attempt_number</actual>
+            <expected>3</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-004-004">
+        <name>Ошибка - превышен лимит попыток</name>
+        <description>Попытка начать 4-ю попытку</description>
+        <anchor ref="QUIZ_ATTEMPT_START"/>
+        <given>
+          - пользователь уже сделал 3 попытки
+        </given>
+        <when>POST /api/quizzes/{id}/start/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>400</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>response.data.error</actual>
+            <expected>MAX_ATTEMPTS_EXCEEDED</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-004-005">
+        <name>Успешная отправка ответов single type</name>
+        <description>Пользователь отправляет ответ на single вопрос</description>
+        <anchor ref="QUIZ_ATTEMPT_SUBMIT"/>
+        <given>
+          - attempt_id = active_attempt
+          - answers = [{ quiz_option_id: correct_option_id }]
+        </given>
+        <when>POST /api/quizzes/{id}/submit/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>200</expected>
+          </assertion>
+          <assertion type="contains">
+            <actual>response.data</actual>
+            <expected>score</expected>
+          </assertion>
+          <assertion type="gte">
+            <actual>response.data.score</actual>
+            <expected>0</expected>
+          </assertion>
+          <assertion type="lte">
+            <actual>response.data.score</actual>
+            <expected>100</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-004-006">
+        <name>Расчёт score для multiple вопроса</name>
+        <description>Вопрос считается правильным только при выборе всех правильных</description>
+        <anchor ref="QUIZ_SCORE_CALC"/>
+        <given>
+          - question_type = 'multiple'
+          - правильные ответы: options [1, 3]
+          - пользователь выбрал: [1, 3]
+        </given>
+        <when>calculate_score()</when>
+        <then>
+          <assertion type="equal">
+            <actual>question_is_correct</actual>
+            <expected>true</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-004-007">
+        <name>Multiple - выбраны не все правильные</name>
+        <description>Выбор подмножества правильных — вопрос неправильный</description>
+        <anchor ref="QUIZ_SCORE_CALC"/>
+        <given>
+          - question_type = 'multiple'
+          - правильные ответы: options [1, 2, 3]
+          - пользователь выбрал: [1, 2]
+        </given>
+        <when>calculate_score()</when>
+        <then>
+          <assertion type="equal">
+            <actual>question_is_correct</actual>
+            <expected>false</expected>
+          </assertion>
+        </then>
+      </scenario>
+    </group>
+    
+    <group level="trajectory">
+      <scenario id="SC-004-101">
+        <name>Проверка лог-маркеров для QUIZ_CREATE</name>
+        <anchor ref="QUIZ_CREATE"/>
+        <required-log-markers>
+          <marker point="ENTRY">
+            <pattern>[quizzes][create_quiz][QUIZ_CREATE][ENTRY]</pattern>
+            <must-contain>
+              <field>module_id</field>
+              <field>question_type</field>
+            </must-contain>
+          </marker>
+          <marker point="EXIT">
+            <pattern>[quizzes][create_quiz][QUIZ_CREATE][EXIT]</pattern>
+            <must-contain>
+              <field>result</field>
+              <field>quiz_id</field>
+            </must-contain>
+          </marker>
+        </required-log-markers>
+      </scenario>
+      
+      <scenario id="SC-004-102">
+        <name>Проверка лог-маркеров для QUIZ_ATTEMPT_START</name>
+        <anchor ref="QUIZ_ATTEMPT_START"/>
+        <required-log-markers>
+          <marker point="ENTRY">
+            <pattern>[quizzes][start_attempt][QUIZ_ATTEMPT_START][ENTRY]</pattern>
+            <must-contain>
+              <field>quiz_id</field>
+              <field>user_id</field>
+            </must-contain>
+          </marker>
+          <marker point="CHECK" optional="true">
+            <pattern>[quizzes][start_attempt][QUIZ_ATTEMPT_START][CHECK]</pattern>
+            <must-contain>
+              <field>check</field>
+              <field>result</field>
+            </must-contain>
+          </marker>
+          <marker point="EXIT">
+            <pattern>[quizzes][start_attempt][QUIZ_ATTEMPT_START][EXIT]</pattern>
+            <must-contain>
+              <field>result</field>
+              <field>attempt_number</field>
+            </must-contain>
+          </marker>
+        </required-log-markers>
+      </scenario>
+      
+      <scenario id="SC-004-103">
+        <name>Проверка лог-маркеров для QUIZ_ATTEMPT_SUBMIT</name>
+        <anchor ref="QUIZ_ATTEMPT_SUBMIT"/>
+        <required-log-markers>
+          <marker point="ENTRY">
+            <pattern>[quizzes][submit_attempt][QUIZ_ATTEMPT_SUBMIT][ENTRY]</pattern>
+            <must-contain>
+              <field>attempt_id</field>
+            </must-contain>
+          </marker>
+          <marker point="STATE_CHANGE">
+            <pattern>[quizzes][submit_attempt][QUIZ_ATTEMPT_SUBMIT][STATE_CHANGE]</pattern>
+            <must-contain>
+              <field>entity</field>
+              <field>from</field>
+              <field>to</field>
+            </must-contain>
+          </marker>
+          <marker point="EXIT">
+            <pattern>[quizzes][submit_attempt][QUIZ_ATTEMPT_SUBMIT][EXIT]</pattern>
+            <must-contain>
+              <field>result</field>
+              <field>score</field>
+            </must-contain>
+          </marker>
+        </required-log-markers>
+      </scenario>
+    </group>
+    
+    <group level="integration">
+      <scenario id="SC-004-201">
+        <name>E2E: Полный цикл прохождения теста</name>
+        <description>Пользователь проходит тест, получает результат</description>
+        <steps>
+          <step order="1">
+            <action>Пользователь открывает модуль с тестом</action>
+            <expected>Отображается кнопка "Начать тест"</expected>
+          </step>
+          <step order="2">
+            <action>Пользователь нажимает "Начать тест"</action>
+            <expected>POST /api/quizzes/{id}/start/ возвращает attempt_id</expected>
+            <verify-markers>
+              <marker ref="SC-004-102"/>
+            </verify-markers>
+          </step>
+          <step order="3">
+            <action>Отображаются вопросы с вариантами ответов</action>
+            <expected>Вопросы отображаются корректно</expected>
+          </step>
+          <step order="4">
+            <action>Пользователь выбирает ответы и отправляет</action>
+            <expected>POST /api/quizzes/{id}/submit/ возвращает score</expected>
+            <verify-markers>
+              <marker ref="SC-004-103"/>
+            </verify-markers>
+          </step>
+          <step order="5">
+            <action>Отображается результат с баллами</action>
+            <expected>Score от 0 до 100</expected>
+          </step>
+          <step order="6">
+            <action>Прогресс модуля обновляется</action>
+            <expected>UserProgress.status обновлён</expected>
+          </step>
+        </steps>
+      </scenario>
+    </group>
+    
+  </test-scenarios>
+  
+  <recommendations/>
+  
+</validation-report>

@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation-report 
+  feature-id="FEAT-002"
+  feature-name="Восстановление пароля"
+  date="2026-04-14"
+  validator="grace-validate-plan">
+  
+  <status>pass</status>
+  <summary>Feature Specification полностью соответствует требованиям GRACE. Все контракты полные. Зависимость от FEAT-001 корректна.</summary>
+  
+  <completeness>
+    <section name="description" status="pass">
+      <check item="present" status="pass"/>
+      <check item="clear" status="pass"/>
+      <check item="length" status="pass">1 абзац, 2 предложения</check>
+    </section>
+    
+    <section name="goal" status="pass">
+      <check item="present" status="pass"/>
+      <check item="measurable" status="pass"/>
+    </section>
+    
+    <section name="components" status="pass">
+      <check item="paths_defined" status="pass">5 новых компонентов + 4 изменяемых</check>
+      <check item="types_defined" status="pass">service, serializer, page</check>
+    </section>
+    
+    <section name="contracts" status="pass">
+      <check item="all_anchors_defined" status="pass">3 anchors</check>
+      <check item="all_fields_present" status="pass"/>
+    </section>
+    
+    <section name="acceptance" status="pass">
+      <check item="user_stories_defined" status="pass">2 user stories</check>
+      <check item="criteria_measurable" status="pass">Все критерии измеримы</check>
+    </section>
+    
+    <section name="test-plan" status="pass">
+      <check item="present" status="pass"/>
+      <check item="coverage" status="pass">Unit + Integration + E2E + Trajectory</check>
+    </section>
+  </completeness>
+  
+  <contracts>
+    <contract anchor="PASSWORD_RESET_REQUEST">
+      <function>request_password_reset</function>
+      <file>backend/apps/users/services.py</file>
+      <has-purpose>true</has-purpose>
+      <has-preconditions>true</has-preconditions>
+      <has-postconditions>true</has-postconditions>
+      <has-invariants>true</has-invariants>
+      <has-sideeffects>true</has-sideeffects>
+      <has-forbidden-changes>true</has-forbidden-changes>
+      <issues/>
+    </contract>
+    
+    <contract anchor="PASSWORD_RESET_CONFIRM">
+      <function>confirm_password_reset</function>
+      <file>backend/apps/users/services.py</file>
+      <has-purpose>true</has-purpose>
+      <has-preconditions>true</has-preconditions>
+      <has-postconditions>true</has-postconditions>
+      <has-invariants>true</has-invariants>
+      <has-sideeffects>true</has-sideeffects>
+      <has-forbidden-changes>true</has-forbidden-changes>
+      <issues/>
+    </contract>
+    
+    <contract anchor="EMAIL_SEND">
+      <function>send_password_reset_email</function>
+      <file>backend/apps/core/email.py</file>
+      <has-purpose>true</has-purpose>
+      <has-preconditions>true</has-preconditions>
+      <has-postconditions>true</has-postconditions>
+      <has-invariants>true</has-invariants>
+      <has-sideeffects>true</has-sideeffects>
+      <has-forbidden-changes>true</has-forbidden-changes>
+      <issues/>
+    </contract>
+  </contracts>
+  
+  <consistency>
+    <check name="semantic_graph_refs" status="pass">
+      Компоненты referenced:
+      - backend.apps.users.services.PasswordResetService
+      - backend.core.email (новый, требует добавления в semantic-graph.xml)
+    </check>
+    <check name="no_duplicate_anchors" status="pass"/>
+    <check name="dependencies_valid" status="pass">
+      Depends on: FEAT-001 (User, PasswordResetToken model)
+    </check>
+    <check name="no_contradictions" status="pass">
+      Инвариант "одинаковый ответ для существующего/несуществующего email" обеспечивает защиту от перебора
+    </check>
+  </consistency>
+  
+  <test-scenarios>
+    
+    <group level="deterministic">
+      <scenario id="SC-002-001">
+        <name>Успешный запрос сброса пароля</name>
+        <description>Пользователь запрашивает сброс для существующего email</description>
+        <anchor ref="PASSWORD_RESET_REQUEST"/>
+        <given>
+          - email = 'user@example.com' (существует в системе)
+        </given>
+        <when>POST /api/auth/password-reset/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>200</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>response.data.success</actual>
+            <expected>true</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-002-002">
+        <name>Запрос сброса для несуществующего email</name>
+        <description>Защита от перебора - одинаковый ответ</description>
+        <anchor ref="PASSWORD_RESET_REQUEST"/>
+        <given>
+          - email = 'nonexistent@example.com' (НЕ существует)
+        </given>
+        <when>POST /api/auth/password-reset/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>200</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>response.data.success</actual>
+            <expected>true</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-002-003">
+        <name>Успешное подтверждение сброса пароля</name>
+        <description>Пользователь устанавливает новый пароль по токену</description>
+        <anchor ref="PASSWORD_RESET_CONFIRM"/>
+        <given>
+          - token = valid_uuid_token (существует, не истёк, не использован)
+          - new_password = 'newpass123' (8-128 символов)
+        </given>
+        <when>POST /api/auth/password-reset/confirm/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>200</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>response.data.success</actual>
+            <expected>true</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-002-004">
+        <name>Ошибка - токен истёк</name>
+        <description>Попытка использовать истёкший токен</description>
+        <anchor ref="PASSWORD_RESET_CONFIRM"/>
+        <given>
+          - token = expired_uuid_token
+        </given>
+        <when>POST /api/auth/password-reset/confirm/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>400</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>response.data.error</actual>
+            <expected>INVALID_OR_EXPIRED_TOKEN</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-002-005">
+        <name>Ошибка - токен уже использован</name>
+        <description>Попытка повторно использовать токен</description>
+        <anchor ref="PASSWORD_RESET_CONFIRM"/>
+        <given>
+          - token = already_used_token
+        </given>
+        <when>POST /api/auth/password-reset/confirm/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>400</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>response.data.error</actual>
+            <expected>INVALID_OR_EXPIRED_TOKEN</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-002-006">
+        <name>Все сессии отзываются при смене пароля</name>
+        <description>После смены пароля все refresh токены отозваны</description>
+        <anchor ref="PASSWORD_RESET_CONFIRM"/>
+        <given>
+          - token = valid_token
+          - у пользователя есть активные refresh токены
+        </given>
+        <when>POST /api/auth/password-reset/confirm/</when>
+        <then>
+          <assertion type="equal">
+            <actual>count_of_revoked_refresh_tokens</actual>
+            <expected>all_active_tokens</expected>
+          </assertion>
+        </then>
+      </scenario>
+    </group>
+    
+    <group level="trajectory">
+      <scenario id="SC-002-101">
+        <name>Проверка лог-маркеров для PASSWORD_RESET_REQUEST</name>
+        <anchor ref="PASSWORD_RESET_REQUEST"/>
+        <required-log-markers>
+          <marker point="ENTRY">
+            <pattern>[users][request_password_reset][PASSWORD_RESET_REQUEST][ENTRY]</pattern>
+            <must-contain>
+              <field>email</field>
+            </must-contain>
+          </marker>
+          <marker point="EXIT">
+            <pattern>[users][request_password_reset][PASSWORD_RESET_REQUEST][EXIT]</pattern>
+            <must-contain>
+              <field>result</field>
+            </must-contain>
+          </marker>
+        </required-log-markers>
+      </scenario>
+      
+      <scenario id="SC-002-102">
+        <name>Проверка лог-маркеров для PASSWORD_RESET_CONFIRM</name>
+        <anchor ref="PASSWORD_RESET_CONFIRM"/>
+        <required-log-markers>
+          <marker point="ENTRY">
+            <pattern>[users][confirm_password_reset][PASSWORD_RESET_CONFIRM][ENTRY]</pattern>
+            <must-contain>
+              <field>token</field>
+            </must-contain>
+          </marker>
+          <marker point="EXIT">
+            <pattern>[users][confirm_password_reset][PASSWORD_RESET_CONFIRM][EXIT]</pattern>
+            <must-contain>
+              <field>result</field>
+            </must-contain>
+          </marker>
+          <marker point="ERROR" optional="true">
+            <pattern>[users][confirm_password_reset][PASSWORD_RESET_CONFIRM][ERROR]</pattern>
+            <must-contain>
+              <field>reason</field>
+            </must-contain>
+          </marker>
+        </required-log-markers>
+      </scenario>
+      
+      <scenario id="SC-002-103">
+        <name>Проверка лог-маркеров для EMAIL_SEND</name>
+        <anchor ref="EMAIL_SEND"/>
+        <required-log-markers>
+          <marker point="ENTRY">
+            <pattern>[core][send_password_reset_email][EMAIL_SEND][ENTRY]</pattern>
+            <must-contain>
+              <field>to_email</field>
+            </must-contain>
+          </marker>
+          <marker point="EXIT">
+            <pattern>[core][send_password_reset_email][EMAIL_SEND][EXIT]</pattern>
+            <must-contain>
+              <field>result</field>
+            </must-contain>
+          </marker>
+        </required-log-markers>
+      </scenario>
+    </group>
+    
+    <group level="integration">
+      <scenario id="SC-002-201">
+        <name>E2E: Полный сценарий восстановления пароля</name>
+        <description>Пользователь запрашивает сброс, получает письмо, устанавливает новый пароль</description>
+        <steps>
+          <step order="1">
+            <action>Пользователь открывает страницу "Забыли пароль?"</action>
+            <expected>Отображается форма ввода email</expected>
+          </step>
+          <step order="2">
+            <action>Пользователь вводит email и отправляет форму</action>
+            <expected>POST /api/auth/password-reset/ возвращает success</expected>
+            <verify-markers>
+              <marker ref="SC-002-101"/>
+            </verify-markers>
+          </step>
+          <step order="3">
+            <action>Отображается сообщение "Проверьте email"</action>
+            <expected>Пользователь понимает, что нужно проверить почту</expected>
+          </step>
+          <step order="4">
+            <action>Email отправлен (проверка через mock)</action>
+            <expected>Email содержит ссылку с токеном</expected>
+            <verify-markers>
+              <marker ref="SC-002-103"/>
+            </verify-markers>
+          </step>
+          <step order="5">
+            <action>Пользователь переходит по ссылке из email</action>
+            <expected>Открывается страница установки нового пароля</expected>
+          </step>
+          <step order="6">
+            <action>Пользователь вводит новый пароль и отправляет</action>
+            <expected>POST /api/auth/password-reset/confirm/ возвращает success</expected>
+            <verify-markers>
+              <marker ref="SC-002-102"/>
+            </verify-markers>
+          </step>
+          <step order="7">
+            <action>Пользователь входит с новым паролем</action>
+            <expected>POST /api/auth/login/ возвращает 200</expected>
+          </step>
+        </steps>
+      </scenario>
+      
+      <scenario id="SC-002-202">
+        <name>E2E: Переход по истёкшей ссылке</name>
+        <description>Пользователь переходит по ссылке после истечения срока</description>
+        <steps>
+          <step order="1">
+            <action>Пользователь переходит по ссылке с истёкшим токеном</action>
+            <expected>Открывается страница установки пароля</expected>
+          </step>
+          <step order="2">
+            <action>Пользователь вводит новый пароль и отправляет</action>
+            <expected>Ошибка "Ссылка истекла, запросите новую"</expected>
+          </step>
+          <step order="3">
+            <action>Пользователь нажимает "Запросить новую ссылку"</action>
+            <expected>Перенаправление на страницу запроса сброса</expected>
+          </step>
+        </steps>
+      </scenario>
+    </group>
+    
+  </test-scenarios>
+  
+  <recommendations>
+    <recommendation priority="medium">
+      Добавить backend.core.email компонент в semantic-graph.xml при реализации.
+    </recommendation>
+  </recommendations>
+  
+</validation-report>

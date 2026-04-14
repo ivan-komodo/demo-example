@@ -1,0 +1,527 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation-report 
+  feature-id="FEAT-003"
+  feature-name="Управление курсами и модулями"
+  date="2026-04-14"
+  validator="grace-validate-plan">
+  
+  <status>pass</status>
+  <summary>Feature Specification полностью соответствует требованиям GRACE. 9 контрактов, все полные. Зависимости корректны.</summary>
+  
+  <completeness>
+    <section name="description" status="pass">
+      <check item="present" status="pass"/>
+      <check item="clear" status="pass"/>
+      <check item="length" status="pass">1 абзац, 2 предложения</check>
+    </section>
+    
+    <section name="goal" status="pass">
+      <check item="present" status="pass"/>
+      <check item="measurable" status="pass"/>
+    </section>
+    
+    <section name="components" status="pass">
+      <check item="paths_defined" status="pass">11 новых компонентов + 2 изменяемых</check>
+      <check item="types_defined" status="pass">model, viewset, service, serializer, module, page</check>
+    </section>
+    
+    <section name="contracts" status="pass">
+      <check item="all_anchors_defined" status="pass">9 anchors</check>
+      <check item="all_fields_present" status="pass"/>
+    </section>
+    
+    <section name="acceptance" status="pass">
+      <check item="user_stories_defined" status="pass">9 user stories</check>
+      <check item="criteria_measurable" status="pass">Все критерии измеримы</check>
+    </section>
+    
+    <section name="test-plan" status="pass">
+      <check item="present" status="pass"/>
+      <check item="coverage" status="pass">Unit + Integration + E2E + Trajectory</check>
+    </section>
+  </completeness>
+  
+  <contracts>
+    <contract anchor="COURSE_CREATE">
+      <function>create_course</function>
+      <file>backend/apps/courses/services.py</file>
+      <has-purpose>true</has-purpose>
+      <has-preconditions>true</has-preconditions>
+      <has-postconditions>true</has-postconditions>
+      <has-invariants>true</has-invariants>
+      <has-sideeffects>true</has-sideeffects>
+      <has-forbidden-changes>true</has-forbidden-changes>
+      <issues/>
+    </contract>
+    
+    <contract anchor="COURSE_UPDATE">
+      <function>update_course</function>
+      <file>backend/apps/courses/services.py</file>
+      <has-purpose>true</has-purpose>
+      <has-preconditions>true</has-preconditions>
+      <has-postconditions>true</has-postconditions>
+      <has-invariants>true</has-invariants>
+      <has-sideeffects>true</has-sideeffects>
+      <has-forbidden-changes>true</has-forbidden-changes>
+      <issues/>
+    </contract>
+    
+    <contract anchor="COURSE_DELETE">
+      <function>delete_course</function>
+      <file>backend/apps/courses/services.py</file>
+      <has-purpose>true</has-purpose>
+      <has-preconditions>true</has-preconditions>
+      <has-postconditions>true</has-postconditions>
+      <has-invariants>true</has-invariants>
+      <has-sideeffects>true</has-sideeffects>
+      <has-forbidden-changes>true</has-forbidden-changes>
+      <issues/>
+    </contract>
+    
+    <contract anchor="COURSE_PUBLISH">
+      <function>publish_course</function>
+      <file>backend/apps/courses/services.py</file>
+      <has-purpose>true</has-purpose>
+      <has-preconditions>true</has-preconditions>
+      <has-postconditions>true</has-postconditions>
+      <has-invariants>true</has-invariants>
+      <has-sideeffects>true</has-sideeffects>
+      <has-forbidden-changes>true</has-forbidden-changes>
+      <issues/>
+    </contract>
+    
+    <contract anchor="COURSE_ARCHIVE">
+      <function>archive_course</function>
+      <file>backend/apps/courses/services.py</file>
+      <has-purpose>true</has-purpose>
+      <has-preconditions>true</has-preconditions>
+      <has-postconditions>true</has-postconditions>
+      <has-invariants>true</has-invariants>
+      <has-sideeffects>true</has-sideeffects>
+      <has-forbidden-changes>true</has-forbidden-changes>
+      <issues/>
+    </contract>
+    
+    <contract anchor="MODULE_CREATE">
+      <function>create_module</function>
+      <file>backend/apps/courses/services.py</file>
+      <has-purpose>true</has-purpose>
+      <has-preconditions>true</has-preconditions>
+      <has-postconditions>true</has-postconditions>
+      <has-invariants>true</has-invariants>
+      <has-sideeffects>true</has-sideeffects>
+      <has-forbidden-changes>true</has-forbidden-changes>
+      <issues/>
+    </contract>
+    
+    <contract anchor="MODULE_UPDATE">
+      <function>update_module</function>
+      <file>backend/apps/courses/services.py</file>
+      <has-purpose>true</has-purpose>
+      <has-preconditions>true</has-preconditions>
+      <has-postconditions>true</has-postconditions>
+      <has-invariants>true</has-invariants>
+      <has-sideeffects>true</has-sideeffects>
+      <has-forbidden-changes>true</has-forbidden-changes>
+      <issues/>
+    </contract>
+    
+    <contract anchor="MODULE_DELETE">
+      <function>delete_module</function>
+      <file>backend/apps/courses/services.py</file>
+      <has-purpose>true</has-purpose>
+      <has-preconditions>true</has-preconditions>
+      <has-postconditions>true</has-postconditions>
+      <has-invariants>true</has-invariants>
+      <has-sideeffects>true</has-sideeffects>
+      <has-forbidden-changes>true</has-forbidden-changes>
+      <issues/>
+    </contract>
+    
+    <contract anchor="MODULE_REORDER">
+      <function>reorder_modules</function>
+      <file>backend/apps/courses/services.py</file>
+      <has-purpose>true</has-purpose>
+      <has-preconditions>true</has-preconditions>
+      <has-postconditions>true</has-postconditions>
+      <has-invariants>true</has-invariants>
+      <has-sideeffects>true</has-sideeffects>
+      <has-forbidden-changes>true</has-forbidden-changes>
+      <issues/>
+    </contract>
+    
+    <contract anchor="COURSE_ENROLL">
+      <function>enroll_user</function>
+      <file>backend/apps/courses/services.py</file>
+      <has-purpose>true</has-purpose>
+      <has-preconditions>true</has-preconditions>
+      <has-postconditions>true</has-postconditions>
+      <has-invariants>true</has-invariants>
+      <has-sideeffects>true</has-sideeffects>
+      <has-forbidden-changes>true</has-forbidden-changes>
+      <issues/>
+    </contract>
+  </contracts>
+  
+  <consistency>
+    <check name="semantic_graph_refs" status="pass">
+      Все anchors referenced в semantic-graph.xml:
+      - COURSE_CREATE, COURSE_UPDATE, COURSE_DELETE, COURSE_PUBLISH, COURSE_ARCHIVE
+      - MODULE_CREATE, MODULE_UPDATE, MODULE_DELETE, MODULE_REORDER
+      - COURSE_ENROLL
+      Component: backend.apps.courses.services
+    </check>
+    <check name="no_duplicate_anchors" status="pass"/>
+    <check name="dependencies_valid" status="pass">
+      Depends on: FEAT-001 (User, permissions)
+      Dependents: FEAT-004, FEAT-005, FEAT-006
+    </check>
+    <check name="no_contradictions" status="pass">
+      Инварианты курса и модулей не противоречат друг другу
+      Публикация только из draft/archived — корректно
+    </check>
+  </consistency>
+  
+  <test-scenarios>
+    
+    <group level="deterministic">
+      <scenario id="SC-003-001">
+        <name>Успешное создание курса</name>
+        <description>Админ создаёт новый курс</description>
+        <anchor ref="COURSE_CREATE"/>
+        <given>
+          - request.user.role == 'admin'
+          - title = 'Основы Python' (1-255 символов)
+          - description = 'Курс для начинающих' (опционально)
+        </given>
+        <when>POST /api/courses/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>201</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>response.data.status</actual>
+            <expected>draft</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-003-002">
+        <name>Успешная публикация курса</name>
+        <description>Админ публикует курс с модулями</description>
+        <anchor ref="COURSE_PUBLISH"/>
+        <given>
+          - request.user.role == 'admin'
+          - course.status = 'draft'
+          - course имеет минимум 1 модуль
+        </given>
+        <when>POST /api/courses/{id}/publish/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>200</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>response.data.status</actual>
+            <expected>published</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-003-003">
+        <name>Ошибка публикации пустого курса</name>
+        <description>Нельзя опубликовать курс без модулей</description>
+        <anchor ref="COURSE_PUBLISH"/>
+        <given>
+          - course.status = 'draft'
+          - course.module_count = 0
+        </given>
+        <when>POST /api/courses/{id}/publish/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>400</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>response.data.error</actual>
+            <expected>COURSE_MUST_HAVE_MODULES</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-003-004">
+        <name>Успешное создание модуля</name>
+        <description>Админ добавляет модуль к курсу</description>
+        <anchor ref="MODULE_CREATE"/>
+        <given>
+          - request.user.role == 'admin'
+          - course_id = existing_course
+          - title = 'Введение'
+          - content_type = 'text'
+          - content_text = 'Содержимое модуля...'
+        </given>
+        <when>POST /api/modules/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>201</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>response.data.order_num</actual>
+            <expected>1</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-003-005">
+        <name>Автоматический order_num для модулей</name>
+        <description>Второй модуль получает order_num=2</description>
+        <anchor ref="MODULE_CREATE"/>
+        <given>
+          - course уже имеет 1 модуль
+          - создаётся второй модуль
+        </given>
+        <when>POST /api/modules/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.data.order_num</actual>
+            <expected>2</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-003-006">
+        <name>Успешная запись на курс</name>
+        <description>Админ записывает пользователя на курс</description>
+        <anchor ref="COURSE_ENROLL"/>
+        <given>
+          - request.user.role == 'admin'
+          - user_id = active_user
+          - course_id = published_course
+          - пользователь ещё не записан
+        </given>
+        <when>POST /api/courses/{id}/enroll/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>201</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>CourseEnrollment.status</actual>
+            <expected>active</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-003-007">
+        <name>Ошибка записи на неопубликованный курс</name>
+        <description>Нельзя записаться на draft курс</description>
+        <anchor ref="COURSE_ENROLL"/>
+        <given>
+          - course.status = 'draft'
+        </given>
+        <when>POST /api/courses/{id}/enroll/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>400</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>response.data.error</actual>
+            <expected>COURSE_NOT_PUBLISHED</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-003-008">
+        <name>Изменение порядка модулей</name>
+        <description>Админ меняет порядок модулей</description>
+        <anchor ref="MODULE_REORDER"/>
+        <given>
+          - course имеет модули [M1, M2, M3]
+          - new_order = [M3, M1, M2]
+        </given>
+        <when>POST /api/courses/{id}/reorder/</when>
+        <then>
+          <assertion type="equal">
+            <actual>M3.order_num</actual>
+            <expected>1</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>M1.order_num</actual>
+            <expected>2</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>M2.order_num</actual>
+            <expected>3</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-003-009">
+        <name>Удаление модуля с пересчётом order_num</name>
+        <description>При удалении модуля порядок пересчитывается</description>
+        <anchor ref="MODULE_DELETE"/>
+        <given>
+          - course имеет модули [M1(order=1), M2(order=2), M3(order=3)]
+          - удаляется M2
+        </given>
+        <when>DELETE /api/modules/{M2}/</when>
+        <then>
+          <assertion type="equal">
+            <actual>M1.order_num</actual>
+            <expected>1</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>M3.order_num</actual>
+            <expected>2</expected>
+          </assertion>
+        </then>
+      </scenario>
+    </group>
+    
+    <group level="trajectory">
+      <scenario id="SC-003-101">
+        <name>Проверка лог-маркеров для COURSE_CREATE</name>
+        <anchor ref="COURSE_CREATE"/>
+        <required-log-markers>
+          <marker point="ENTRY">
+            <pattern>[courses][create_course][COURSE_CREATE][ENTRY]</pattern>
+            <must-contain>
+              <field>title</field>
+            </must-contain>
+          </marker>
+          <marker point="EXIT">
+            <pattern>[courses][create_course][COURSE_CREATE][EXIT]</pattern>
+            <must-contain>
+              <field>result</field>
+              <field>course_id</field>
+            </must-contain>
+          </marker>
+        </required-log-markers>
+      </scenario>
+      
+      <scenario id="SC-003-102">
+        <name>Проверка лог-маркеров для COURSE_PUBLISH</name>
+        <anchor ref="COURSE_PUBLISH"/>
+        <required-log-markers>
+          <marker point="ENTRY">
+            <pattern>[courses][publish_course][COURSE_PUBLISH][ENTRY]</pattern>
+            <must-contain>
+              <field>course_id</field>
+            </must-contain>
+          </marker>
+          <marker point="DECISION" optional="true">
+            <pattern>[courses][publish_course][COURSE_PUBLISH][DECISION]</pattern>
+            <must-contain>
+              <field>has_modules</field>
+            </must-contain>
+          </marker>
+          <marker point="EXIT">
+            <pattern>[courses][publish_course][COURSE_PUBLISH][EXIT]</pattern>
+            <must-contain>
+              <field>result</field>
+            </must-contain>
+          </marker>
+        </required-log-markers>
+      </scenario>
+      
+      <scenario id="SC-003-103">
+        <name>Проверка лог-маркеров для MODULE_CREATE</name>
+        <anchor ref="MODULE_CREATE"/>
+        <required-log-markers>
+          <marker point="ENTRY">
+            <pattern>[courses][create_module][MODULE_CREATE][ENTRY]</pattern>
+            <must-contain>
+              <field>course_id</field>
+              <field>title</field>
+            </must-contain>
+          </marker>
+          <marker point="EXIT">
+            <pattern>[courses][create_module][MODULE_CREATE][EXIT]</pattern>
+            <must-contain>
+              <field>result</field>
+              <field>module_id</field>
+              <field>order_num</field>
+            </must-contain>
+          </marker>
+        </required-log-markers>
+      </scenario>
+      
+      <scenario id="SC-003-104">
+        <name>Проверка лог-маркеров для COURSE_ENROLL</name>
+        <anchor ref="COURSE_ENROLL"/>
+        <required-log-markers>
+          <marker point="ENTRY">
+            <pattern>[courses][enroll_user][COURSE_ENROLL][ENTRY]</pattern>
+            <must-contain>
+              <field>user_id</field>
+              <field>course_id</field>
+            </must-contain>
+          </marker>
+          <marker point="STATE_CHANGE">
+            <pattern>[courses][enroll_user][COURSE_ENROLL][STATE_CHANGE]</pattern>
+            <must-contain>
+              <field>entity</field>
+              <field>from</field>
+              <field>to</field>
+            </must-contain>
+          </marker>
+          <marker point="EXIT">
+            <pattern>[courses][enroll_user][COURSE_ENROLL][EXIT]</pattern>
+            <must-contain>
+              <field>result</field>
+            </must-contain>
+          </marker>
+        </required-log-markers>
+      </scenario>
+    </group>
+    
+    <group level="integration">
+      <scenario id="SC-003-201">
+        <name>E2E: Создание и публикация курса</name>
+        <description>Админ создаёт курс, добавляет модули и публикует</description>
+        <steps>
+          <step order="1">
+            <action>Админ входит в систему</action>
+            <expected>Успешный логин</expected>
+          </step>
+          <step order="2">
+            <action>Админ создаёт новый курс</action>
+            <expected>POST /api/courses/ возвращает 201, status=draft</expected>
+            <verify-markers>
+              <marker ref="SC-003-101"/>
+            </verify-markers>
+          </step>
+          <step order="3">
+            <action>Админ добавляет 3 модуля к курсу</action>
+            <expected>Модули создаются с order_num 1, 2, 3</expected>
+            <verify-markers>
+              <marker ref="SC-003-103"/>
+            </verify-markers>
+          </step>
+          <step order="4">
+            <action>Админ пытается опубликовать курс</action>
+            <expected>POST /api/courses/{id}/publish/ возвращает 200</expected>
+            <verify-markers>
+              <marker ref="SC-003-102"/>
+            </verify-markers>
+          </step>
+          <step order="5">
+            <action>Курс виден в списке опубликованных</name>
+            <expected>GET /api/courses/?status=published включает новый курс</expected>
+          </step>
+        </steps>
+      </scenario>
+    </group>
+    
+  </test-scenarios>
+  
+  <recommendations>
+    <recommendation priority="low">
+      Рассмотреть добавление контракта MODULE_REORDER для полноты.
+    </recommendation>
+  </recommendations>
+  
+</validation-report>

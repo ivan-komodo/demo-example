@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation-report 
+  feature-id="{FEATURE_ID}"
+  feature-name="{FEATURE_NAME}"
+  date="{DATE}"
+  validator="{AGENT_ID}">
+  
+  <!-- === СТАТУС ВАЛИДАЦИИ === -->
+  <status>{pass|fail|incomplete}</status>
+  <summary>{краткое резюме}</summary>
+  
+  <!-- === ПРОВЕРКА ПОЛНОТЫ === -->
+  <completeness>
+    <section name="description" status="{pass|fail}">
+      <check item="present" status="{pass|fail}"/>
+      <check item="clear" status="{pass|fail}"/>
+    </section>
+    
+    <section name="components" status="{pass|fail}">
+      <check item="paths_defined" status="{pass|fail}"/>
+      <check item="types_defined" status="{pass|fail}"/>
+    </section>
+    
+    <section name="contracts" status="{pass|fail}">
+      <check item="all_anchors_defined" status="{pass|fail}"/>
+      <check item="all_fields_present" status="{pass|fail}"/>
+      <issue anchor="{ANCHOR_ID}">
+        {описание проблемы}
+      </issue>
+    </section>
+    
+    <section name="acceptance" status="{pass|fail}">
+      <check item="user_stories_defined" status="{pass|fail}"/>
+      <check item="criteria_measurable" status="{pass|fail}"/>
+    </section>
+  </completeness>
+  
+  <!-- === ПРОВЕРКА КОНТРАКТОВ === -->
+  <contracts>
+    <contract anchor="{ANCHOR_ID_1}">
+      <function>{function_name}</function>
+      <file>{path}</file>
+      <has-purpose>true</has-purpose>
+      <has-preconditions>true</has-preconditions>
+      <has-postconditions>true</has-postconditions>
+      <has-invariants>true</has-invariants>
+      <has-sideeffects>true</has-sideeffects>
+      <has-forbidden-changes>true</has-forbidden-changes>
+      <issues>
+        <!-- Проблемы если есть -->
+      </issues>
+    </contract>
+    
+    <contract anchor="{ANCHOR_ID_2}">
+      <!-- ... -->
+    </contract>
+  </contracts>
+  
+  <!-- === ПРОВЕРКА КОНСИСТЕНТНОСТИ === -->
+  <consistency>
+    <check name="semantic_graph_refs" status="{pass|fail}">
+      {все ссылки в контрактах есть в semantic-graph.xml}
+    </check>
+    <check name="no_duplicate_anchors" status="{pass|fail}"/>
+    <check name="dependencies_valid" status="{pass|fail}"/>
+  </consistency>
+  
+  <!-- === ТЕСТОВЫЕ СЦЕНАРИИ === -->
+  <test-scenarios>
+    
+    <!-- Level 1: Детерминированные проверки -->
+    <group level="deterministic">
+      <scenario id="SC-001">
+        <name>{название сценария}</name>
+        <description>{описание}</description>
+        <anchor ref="{ANCHOR_ID}"/>
+        <given>{предусловия}</given>
+        <when>{действие}</when>
+        <then>
+          <assertion type="equal">
+            <actual>result.status</actual>
+            <expected>200</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-002">
+        <!-- ... -->
+      </scenario>
+    </group>
+    
+    <!-- Level 2: Тесты траектории (log markers) -->
+    <group level="trajectory">
+      <scenario id="SC-010">
+        <name>Проверка лог-маркеров для {ANCHOR_ID}</name>
+        <anchor ref="{ANCHOR_ID}"/>
+        <required-log-markers>
+          <marker point="ENTRY">
+            <pattern>[{MODULE}][{FUNCTION}][{ANCHOR_ID}][ENTRY]</pattern>
+            <must-contain>
+              <field>module</field>
+              <field>function</field>
+              <field>anchor</field>
+            </must-contain>
+          </marker>
+          
+          <marker point="EXIT">
+            <pattern>[{MODULE}][{FUNCTION}][{ANCHOR_ID}][EXIT]</pattern>
+            <must-contain>
+              <field>result</field>
+            </must-contain>
+          </marker>
+          
+          <marker point="CHECK" optional="true">
+            <pattern>[{MODULE}][{FUNCTION}][{ANCHOR_ID}][CHECK]</pattern>
+          </marker>
+          
+          <marker point="DECISION" optional="true">
+            <pattern>[{MODULE}][{FUNCTION}][{ANCHOR_ID}][DECISION]</pattern>
+          </marker>
+          
+          <marker point="ERROR" optional="true">
+            <pattern>[{MODULE}][{FUNCTION}][{ANCHOR_ID}][ERROR]</pattern>
+            <must-contain>
+              <field>reason</field>
+            </must-contain>
+          </marker>
+        </required-log-markers>
+      </scenario>
+    </group>
+    
+    <!-- Level 3: Интеграционные тесты -->
+    <group level="integration">
+      <scenario id="SC-020">
+        <name>{E2E сценарий}</name>
+        <description>{описание end-to-end сценария}</description>
+        <steps>
+          <step order="1">
+            <action>{действие}</action>
+            <expected>{ожидаемый результат}</expected>
+            <verify-markers>
+              <marker ref="SC-010"/> <!-- ссылка на trajectory test -->
+            </verify-markers>
+          </step>
+          
+          <step order="2">
+            <action>{действие}</action>
+            <expected>{ожидаемый результат}</expected>
+          </step>
+        </steps>
+      </scenario>
+    </group>
+    
+  </test-scenarios>
+  
+  <!-- === РЕКОМЕНДАЦИИ === -->
+  <recommendations>
+    <recommendation priority="{high|medium|low}">
+      {рекомендация по улучшению}
+    </recommendation>
+  </recommendations>
+  
+</validation-report>

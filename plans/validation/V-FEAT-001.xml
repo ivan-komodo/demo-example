@@ -1,0 +1,587 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation-report 
+  feature-id="FEAT-001"
+  feature-name="Аутентификация и регистрация пользователей"
+  date="2026-04-14"
+  validator="grace-validate-plan">
+  
+  <status>pass</status>
+  <summary>Feature Specification полностью соответствует требованиям GRACE. Все контракты полные, ссылки на semantic-graph.xml валидны.</summary>
+  
+  <completeness>
+    <section name="description" status="pass">
+      <check item="present" status="pass"/>
+      <check item="clear" status="pass"/>
+      <check item="length" status="pass">1 абзац, 3 предложения</check>
+    </section>
+    
+    <section name="goal" status="pass">
+      <check item="present" status="pass"/>
+      <check item="measurable" status="pass"/>
+    </section>
+    
+    <section name="components" status="pass">
+      <check item="paths_defined" status="pass">12 новых компонентов + 3 изменяемых</check>
+      <check item="types_defined" status="pass">model, viewset, service, serializer, permission, module, page, stylesheet</check>
+    </section>
+    
+    <section name="contracts" status="pass">
+      <check item="all_anchors_defined" status="pass">5 anchors</check>
+      <check item="all_fields_present" status="pass"/>
+    </section>
+    
+    <section name="acceptance" status="pass">
+      <check item="user_stories_defined" status="pass">5 user stories</check>
+      <check item="criteria_measurable" status="pass">Все критерии измеримы</check>
+    </section>
+    
+    <section name="test-plan" status="pass">
+      <check item="present" status="pass"/>
+      <check item="coverage" status="pass">Unit + Integration + E2E + Trajectory</check>
+    </section>
+  </completeness>
+  
+  <contracts>
+    <contract anchor="USER_REGISTER">
+      <function>register_user</function>
+      <file>backend/apps/users/services.py</file>
+      <has-purpose>true</has-purpose>
+      <has-preconditions>true</has-preconditions>
+      <has-postconditions>true</has-postconditions>
+      <has-invariants>true</has-invariants>
+      <has-sideeffects>true</has-sideeffects>
+      <has-forbidden-changes>true</has-forbidden-changes>
+      <issues/>
+    </contract>
+    
+    <contract anchor="AUTH_LOGIN">
+      <function>authenticate_user</function>
+      <file>backend/apps/users/services.py</file>
+      <has-purpose>true</has-purpose>
+      <has-preconditions>true</has-preconditions>
+      <has-postconditions>true</has-postconditions>
+      <has-invariants>true</has-invariants>
+      <has-sideeffects>true</has-sideeffects>
+      <has-forbidden-changes>true</has-forbidden-changes>
+      <issues/>
+    </contract>
+    
+    <contract anchor="AUTH_REFRESH">
+      <function>refresh_tokens</function>
+      <file>backend/apps/users/services.py</file>
+      <has-purpose>true</has-purpose>
+      <has-preconditions>true</has-preconditions>
+      <has-postconditions>true</has-postconditions>
+      <has-invariants>true</has-invariants>
+      <has-sideeffects>true</has-sideeffects>
+      <has-forbidden-changes>true</has-forbidden-changes>
+      <issues/>
+    </contract>
+    
+    <contract anchor="AUTH_LOGOUT">
+      <function>logout_user</function>
+      <file>backend/apps/users/services.py</file>
+      <has-purpose>true</has-purpose>
+      <has-preconditions>true</has-preconditions>
+      <has-postconditions>true</has-postconditions>
+      <has-invariants>true</has-invariants>
+      <has-sideeffects>true</has-sideeffects>
+      <has-forbidden-changes>true</has-forbidden-changes>
+      <issues/>
+    </contract>
+    
+    <contract anchor="JWT_VERIFY">
+      <function>verify_token</function>
+      <file>backend/apps/users/services.py</file>
+      <has-purpose>true</has-purpose>
+      <has-preconditions>true</has-preconditions>
+      <has-postconditions>true</has-postconditions>
+      <has-invariants>true</has-invariants>
+      <has-sideeffects>true</has-sideeffects>
+      <has-forbidden-changes>true</has-forbidden-changes>
+      <issues/>
+    </contract>
+  </contracts>
+  
+  <consistency>
+    <check name="semantic_graph_refs" status="pass">
+      Все компоненты и anchors есть в semantic-graph.xml:
+      - backend.apps.users.services (component)
+      - USER_REGISTER, AUTH_LOGIN, AUTH_REFRESH, AUTH_LOGOUT, JWT_VERIFY (anchors)
+    </check>
+    <check name="no_duplicate_anchors" status="pass"/>
+    <check name="dependencies_valid" status="pass">
+      Зависимости: backend.core (permissions, exceptions, middleware)
+      Зависимые: courses, quizzes, progress, bookings, notifications
+    </check>
+    <check name="no_contradictions" status="pass">
+      Предусловия не противоречат друг другу
+      Постусловия достижимы
+      Инварианты не нарушаются
+    </check>
+  </consistency>
+  
+  <test-scenarios>
+    
+    <group level="deterministic">
+      <scenario id="SC-001-001">
+        <name>Успешная регистрация пользователя</name>
+        <description>Администратор создаёт нового пользователя с валидными данными</description>
+        <anchor ref="USER_REGISTER"/>
+        <given>
+          - request.user.role == 'admin'
+          - email = 'newuser@example.com' (валидный, уникальный)
+          - password = 'validpass123' (8-128 символов)
+          - role = 'learner'
+        </given>
+        <when>POST /api/auth/register/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>201</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>response.data.email</actual>
+            <expected>newuser@example.com</expected>
+          </assertion>
+          <assertion type="not_contains">
+            <actual>response.data</actual>
+            <expected>password</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-001-002">
+        <name>Ошибка регистрации - email уже существует</name>
+        <description>Попытка регистрации с дублирующимся email</description>
+        <anchor ref="USER_REGISTER"/>
+        <given>
+          - request.user.role == 'admin'
+          - email = 'existing@example.com' (уже в БД)
+          - password = 'validpass123'
+        </given>
+        <when>POST /api/auth/register/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>400</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>response.data.error</actual>
+            <expected>EMAIL_ALREADY_EXISTS</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-001-003">
+        <name>Ошибка регистрации - недостаточно прав</name>
+        <description>Не-администратор пытается создать пользователя</description>
+        <anchor ref="USER_REGISTER"/>
+        <given>
+          - request.user.role == 'learner'
+          - email = 'newuser@example.com'
+        </given>
+        <when>POST /api/auth/register/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>403</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>response.data.error</actual>
+            <expected>PERMISSION_DENIED</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-001-004">
+        <name>Успешный логин</name>
+        <description>Пользователь входит с правильными credentials</description>
+        <anchor ref="AUTH_LOGIN"/>
+        <given>
+          - email = 'user@example.com' (существует)
+          - password = 'correctpassword'
+          - user.is_active == True
+        </given>
+        <when>POST /api/auth/login/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>200</expected>
+          </assertion>
+          <assertion type="contains">
+            <actual>response.data</actual>
+            <expected>access_token</expected>
+          </assertion>
+          <assertion type="contains">
+            <actual>response.data</actual>
+            <expected>refresh_token</expected>
+          </assertion>
+          <assertion type="not_contains">
+            <actual>response.data</actual>
+            <expected>password</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-001-005">
+        <name>Ошибка логина - неверные credentials</name>
+        <description>Пользователь входит с неправильным паролем</description>
+        <anchor ref="AUTH_LOGIN"/>
+        <given>
+          - email = 'user@example.com' (существует)
+          - password = 'wrongpassword'
+        </given>
+        <when>POST /api/auth/login/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>401</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>response.data.error</actual>
+            <expected>INVALID_CREDENTIALS</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-001-006">
+        <name>Ошибка логина - rate limit</name>
+        <description>Превышен лимит попыток входа</description>
+        <anchor ref="AUTH_LOGIN"/>
+        <given>
+          - IP уже сделал 5 запросов за 15 минут
+        </given>
+        <when>POST /api/auth/login/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>429</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>response.data.error</actual>
+            <expected>RATE_LIMIT_EXCEEDED</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-001-007">
+        <name>Успешное обновление токенов</name>
+        <description>Refresh токен обменивается на новую пару</description>
+        <anchor ref="AUTH_REFRESH"/>
+        <given>
+          - valid refresh_token в теле запроса
+          - token.expires_at > now()
+          - token.revoked_at IS NULL
+        </given>
+        <when>POST /api/auth/refresh/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>200</expected>
+          </assertion>
+          <assertion type="contains">
+            <actual>response.data</actual>
+            <expected>access_token</expected>
+          </assertion>
+          <assertion type="contains">
+            <actual>response.data</actual>
+            <expected>refresh_token</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-001-008">
+        <name>Ошибка refresh - невалидный токен</name>
+        <description>Попытка использовать отозванный или истёкший токен</description>
+        <anchor ref="AUTH_REFRESH"/>
+        <given>
+          - refresh_token revoked или expired
+        </given>
+        <when>POST /api/auth/refresh/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>401</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>response.data.error</actual>
+            <expected>INVALID_REFRESH_TOKEN</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-001-009">
+        <name>Успешный логаут</name>
+        <description>Refresh токен отзывается</description>
+        <anchor ref="AUTH_LOGOUT"/>
+        <given>
+          - valid refresh_token
+        </given>
+        <when>POST /api/auth/logout/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>200</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>response.data.success</actual>
+            <expected>true</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-001-010">
+        <name>Логаут идемпотентен</name>
+        <description>Повторный логаут с тем же токеном успешен</description>
+        <anchor ref="AUTH_LOGOUT"/>
+        <given>
+          - refresh_token уже отозван
+        </given>
+        <when>POST /api/auth/logout/</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>200</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>response.data.success</actual>
+            <expected>true</expected>
+          </assertion>
+        </then>
+      </scenario>
+    </group>
+    
+    <group level="trajectory">
+      <scenario id="SC-001-101">
+        <name>Проверка лог-маркеров для USER_REGISTER</name>
+        <anchor ref="USER_REGISTER"/>
+        <required-log-markers>
+          <marker point="ENTRY">
+            <pattern>[users][register_user][USER_REGISTER][ENTRY]</pattern>
+            <must-contain>
+              <field>email</field>
+              <field>role</field>
+            </must-contain>
+          </marker>
+          <marker point="EXIT">
+            <pattern>[users][register_user][USER_REGISTER][EXIT]</pattern>
+            <must-contain>
+              <field>result</field>
+              <field>user_id</field>
+            </must-contain>
+          </marker>
+          <marker point="ERROR" optional="true">
+            <pattern>[users][register_user][USER_REGISTER][ERROR]</pattern>
+            <must-contain>
+              <field>reason</field>
+            </must-contain>
+          </marker>
+        </required-log-markers>
+      </scenario>
+      
+      <scenario id="SC-001-102">
+        <name>Проверка лог-маркеров для AUTH_LOGIN</name>
+        <anchor ref="AUTH_LOGIN"/>
+        <required-log-markers>
+          <marker point="ENTRY">
+            <pattern>[users][authenticate_user][AUTH_LOGIN][ENTRY]</pattern>
+            <must-contain>
+              <field>email</field>
+            </must-contain>
+          </marker>
+          <marker point="CHECK" optional="true">
+            <pattern>[users][authenticate_user][AUTH_LOGIN][CHECK]</pattern>
+            <must-contain>
+              <field>check</field>
+              <field>result</field>
+            </must-contain>
+          </marker>
+          <marker point="EXIT">
+            <pattern>[users][authenticate_user][AUTH_LOGIN][EXIT]</pattern>
+            <must-contain>
+              <field>result</field>
+            </must-contain>
+          </marker>
+          <marker point="ERROR" optional="true">
+            <pattern>[users][authenticate_user][AUTH_LOGIN][ERROR]</pattern>
+            <must-contain>
+              <field>reason</field>
+            </must-contain>
+          </marker>
+        </required-log-markers>
+      </scenario>
+      
+      <scenario id="SC-001-103">
+        <name>Проверка лог-маркеров для AUTH_REFRESH</name>
+        <anchor ref="AUTH_REFRESH"/>
+        <required-log-markers>
+          <marker point="ENTRY">
+            <pattern>[users][refresh_tokens][AUTH_REFRESH][ENTRY]</pattern>
+          </marker>
+          <marker point="EXIT">
+            <pattern>[users][refresh_tokens][AUTH_REFRESH][EXIT]</pattern>
+            <must-contain>
+              <field>result</field>
+            </must-contain>
+          </marker>
+          <marker point="ERROR" optional="true">
+            <pattern>[users][refresh_tokens][AUTH_REFRESH][ERROR]</pattern>
+            <must-contain>
+              <field>reason</field>
+            </must-contain>
+          </marker>
+        </required-log-markers>
+      </scenario>
+      
+      <scenario id="SC-001-104">
+        <name>Проверка лог-маркеров для AUTH_LOGOUT</name>
+        <anchor ref="AUTH_LOGOUT"/>
+        <required-log-markers>
+          <marker point="ENTRY">
+            <pattern>[users][logout_user][AUTH_LOGOUT][ENTRY]</pattern>
+          </marker>
+          <marker point="EXIT">
+            <pattern>[users][logout_user][AUTH_LOGOUT][EXIT]</pattern>
+            <must-contain>
+              <field>result</field>
+            </must-contain>
+          </marker>
+        </required-log-markers>
+      </scenario>
+      
+      <scenario id="SC-001-105">
+        <name>Проверка лог-маркеров для JWT_VERIFY</name>
+        <anchor ref="JWT_VERIFY"/>
+        <required-log-markers>
+          <marker point="ENTRY">
+            <pattern>[users][verify_token][JWT_VERIFY][ENTRY]</pattern>
+          </marker>
+          <marker point="EXIT">
+            <pattern>[users][verify_token][JWT_VERIFY][EXIT]</pattern>
+            <must-contain>
+              <field>result</field>
+              <field>user_id</field>
+            </must-contain>
+          </marker>
+          <marker point="ERROR" optional="true">
+            <pattern>[users][verify_token][JWT_VERIFY][ERROR]</pattern>
+            <must-contain>
+              <field>reason</field>
+            </must-contain>
+          </marker>
+        </required-log-markers>
+      </scenario>
+    </group>
+    
+    <group level="integration">
+      <scenario id="SC-001-201">
+        <name>E2E: Полный сценарий входа в систему</name>
+        <description>Пользователь входит, получает токены, использует защищённый endpoint</description>
+        <steps>
+          <step order="1">
+            <action>Пользователь открывает страницу входа</action>
+            <expected>Отображается форма логина</expected>
+          </step>
+          <step order="2">
+            <action>Пользователь вводит email и password, нажимает "Войти"</action>
+            <expected>POST /api/auth/login/ возвращает 200 с токенами</expected>
+            <verify-markers>
+              <marker ref="SC-001-102"/>
+            </verify-markers>
+          </step>
+          <step order="3">
+            <action>Токены сохраняются в localStorage</action>
+            <expected>access_token и refresh_token в localStorage</expected>
+          </step>
+          <step order="4">
+            <action>Пользователь переходит на защищённую страницу</action>
+            <expected>Страница загружается с данными пользователя</expected>
+          </step>
+        </steps>
+      </scenario>
+      
+      <scenario id="SC-001-202">
+        <name>E2E: Сценарий регистрации пользователя админом</name>
+        <description>Администратор создаёт нового пользователя</description>
+        <steps>
+          <step order="1">
+            <action>Админ входит в систему</action>
+            <expected>Успешный логин</expected>
+          </step>
+          <step order="2">
+            <action>Админ открывает форму создания пользователя</action>
+            <expected>Форма отображается</expected>
+          </step>
+          <step order="3">
+            <action>Админ вводит данные и отправляет форму</action>
+            <expected>POST /api/auth/register/ возвращает 201</expected>
+            <verify-markers>
+              <marker ref="SC-001-101"/>
+            </verify-markers>
+          </step>
+          <step order="4">
+            <action>Новый пользователь появляется в списке</action>
+            <expected>Пользователь в списке с корректными данными</expected>
+          </step>
+        </steps>
+      </scenario>
+      
+      <scenario id="SC-001-203">
+        <name>E2E: Автоматическое обновление токена</name>
+        <description>Система автоматически обновляет токен при истечении</description>
+        <steps>
+          <step order="1">
+            <action>Пользователь работает в системе, токен истекает</action>
+            <expected>API возвращает 401 TOKEN_EXPIRED</expected>
+          </step>
+          <step order="2">
+            <action>Клиент автоматически отправляет refresh</action>
+            <expected>POST /api/auth/refresh/ возвращает новые токены</expected>
+            <verify-markers>
+              <marker ref="SC-001-103"/>
+            </verify-markers>
+          </step>
+          <step order="3">
+            <action>Запрос повторяется с новым токеном</action>
+            <expected>Запрос успешен</expected>
+          </step>
+        </steps>
+      </scenario>
+      
+      <scenario id="SC-001-204">
+        <name>E2E: Сценарий выхода из системы</name>
+        <description>Пользователь выходит, токены отзываются</description>
+        <steps>
+          <step order="1">
+            <action>Пользователь нажимает "Выйти"</action>
+            <expected>POST /api/auth/logout/ возвращает success</expected>
+            <verify-markers>
+              <marker ref="SC-001-104"/>
+            </verify-markers>
+          </step>
+          <step order="2">
+            <action>Токены удаляются из localStorage</action>
+            <expected>localStorage очищен</expected>
+          </step>
+          <step order="3">
+            <action>Пользователь перенаправлен на страницу входа</action>
+            <expected>Отображается форма логина</expected>
+          </step>
+          <step order="4">
+            <action>Попытка использовать старый refresh токен</action>
+            <expected>POST /api/auth/refresh/ возвращает 401</expected>
+          </step>
+        </steps>
+      </scenario>
+    </group>
+    
+  </test-scenarios>
+  
+  <recommendations>
+    <recommendation priority="low">
+      Добавить контракты для frontend компонентов (auth.js, api.js) для полноты отслеживания.
+    </recommendation>
+  </recommendations>
+  
+</validation-report>

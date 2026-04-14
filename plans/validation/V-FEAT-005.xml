@@ -1,0 +1,345 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation-report 
+  feature-id="FEAT-005"
+  feature-name="Отслеживание прогресса"
+  date="2026-04-14"
+  validator="grace-validate-plan">
+  
+  <status>pass</status>
+  <summary>Feature Specification соответствует требованиям GRACE. 3 контракта, все полные. Зависимости корректны.</summary>
+  
+  <completeness>
+    <section name="description" status="pass">
+      <check item="present" status="pass"/>
+      <check item="clear" status="pass"/>
+      <check item="length" status="pass">1 абзац, 2 предложения</check>
+    </section>
+    
+    <section name="goal" status="pass">
+      <check item="present" status="pass"/>
+      <check item="measurable" status="pass"/>
+    </section>
+    
+    <section name="components" status="pass">
+      <check item="paths_defined" status="pass">5 новых компонентов + 2 изменяемых</check>
+      <check item="types_defined" status="pass">model, viewset, service, module, page</check>
+    </section>
+    
+    <section name="contracts" status="pass">
+      <check item="all_anchors_defined" status="pass">3 anchors</check>
+      <check item="all_fields_present" status="pass"/>
+    </section>
+    
+    <section name="acceptance" status="pass">
+      <check item="user_stories_defined" status="pass">2 user stories</check>
+      <check item="criteria_measurable" status="pass">Все критерии измеримы</check>
+    </section>
+    
+    <section name="test-plan" status="pass">
+      <check item="present" status="pass"/>
+      <check item="coverage" status="pass">Unit + Trajectory</check>
+    </section>
+  </completeness>
+  
+  <contracts>
+    <contract anchor="PROGRESS_GET">
+      <function>get_user_progress</function>
+      <file>backend/apps/progress/services.py</file>
+      <has-purpose>true</has-purpose>
+      <has-preconditions>true</has-preconditions>
+      <has-postconditions>true</has-postconditions>
+      <has-invariants>true</has-invariants>
+      <has-sideeffects>true</has-sideeffects>
+      <has-forbidden-changes>true</has-forbidden-changes>
+      <issues/>
+    </contract>
+    
+    <contract anchor="PROGRESS_UPDATE">
+      <function>update_module_progress</function>
+      <file>backend/apps/progress/services.py</file>
+      <has-purpose>true</has-purpose>
+      <has-preconditions>true</has-preconditions>
+      <has-postconditions>true</has-postconditions>
+      <has-invariants>true</has-invariants>
+      <has-sideeffects>true</has-sideeffects>
+      <has-forbidden-changes>true</has-forbidden-changes>
+      <issues/>
+    </contract>
+    
+    <contract anchor="PROGRESS_COMPLETE">
+      <function>mark_module_completed</function>
+      <file>backend/apps/progress/services.py</file>
+      <has-purpose>true</has-purpose>
+      <has-preconditions>true</has-preconditions>
+      <has-postconditions>true</has-postconditions>
+      <has-invariants>true</has-invariants>
+      <has-sideeffects>true</has-sideeffects>
+      <has-forbidden-changes>true</has-forbidden-changes>
+      <issues/>
+    </contract>
+  </contracts>
+  
+  <consistency>
+    <check name="semantic_graph_refs" status="pass">
+      Все anchors referenced:
+      - PROGRESS_GET, PROGRESS_UPDATE, PROGRESS_COMPLETE
+      Component: backend.apps.progress.services
+    </check>
+    <check name="no_duplicate_anchors" status="pass"/>
+    <check name="dependencies_valid" status="pass">
+      Depends on: FEAT-001 (User), FEAT-003 (Module, CourseEnrollment), FEAT-004 (QuizAttempt)
+      Dependents: FEAT-007 (Notifications)
+    </check>
+    <check name="no_contradictions" status="pass">
+      Инвариант "статус не может вернуться назад" соблюдается
+      Score = max(all attempts) корректно
+    </check>
+  </consistency>
+  
+  <test-scenarios>
+    
+    <group level="deterministic">
+      <scenario id="SC-005-001">
+        <name>Получение прогресса по курсу</name>
+        <description>Пользователь запрашивает прогресс по курсу</description>
+        <anchor ref="PROGRESS_GET"/>
+        <given>
+          - пользователь авторизован
+          - course_id = enrolled_course
+        </given>
+        <when>GET /api/progress/?course_id={id}</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>200</expected>
+          </assertion>
+          <assertion type="contains">
+            <actual>response.data</actual>
+            <expected>modules</expected>
+          </assertion>
+          <assertion type="contains">
+            <actual>response.data</actual>
+            <expected>total_progress</expected>
+          </assertion>
+          <assertion type="gte">
+            <actual>response.data.total_progress</actual>
+            <expected>0</expected>
+          </assertion>
+          <assertion type="lte">
+            <actual>response.data.total_progress</actual>
+            <expected>100</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-005-002">
+        <name>Ошибка - не записан на курс</name>
+        <description>Пользователь не может получить прогресс чужого курса</description>
+        <anchor ref="PROGRESS_GET"/>
+        <given>
+          - пользователь авторизован
+          - course_id = not_enrolled_course
+        </given>
+        <when>GET /api/progress/?course_id={id}</when>
+        <then>
+          <assertion type="equal">
+            <actual>response.status_code</actual>
+            <expected>403</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>response.data.error</actual>
+            <expected>NOT_ENROLLED</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-005-003">
+        <name>Обновление прогресса - начало модуля</name>
+        <description>Модуль переходит в статус in_progress</description>
+        <anchor ref="PROGRESS_UPDATE"/>
+        <given>
+          - module.status = 'not_started'
+        </given>
+        <when>update_module_progress(status='in_progress')</when>
+        <then>
+          <assertion type="equal">
+            <actual>UserProgress.status</actual>
+            <expected>in_progress</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-005-004">
+        <name>Ошибка - понижение статуса</name>
+        <description>Нельзя понизить статус с completed на in_progress</description>
+        <anchor ref="PROGRESS_UPDATE"/>
+        <given>
+          - module.status = 'completed'
+        </given>
+        <when>update_module_progress(status='in_progress')</when>
+        <then>
+          <assertion type="equal">
+            <actual>status_change_allowed</actual>
+            <expected>false</expected>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-005-005">
+        <name>Завершение модуля</name>
+        <description>Модуль помечается как completed</description>
+        <anchor ref="PROGRESS_COMPLETE"/>
+        <given>
+          - module с пройденным тестом
+          - score = 85
+        </given>
+        <when>mark_module_completed()</when>
+        <then>
+          <assertion type="equal">
+            <actual>UserProgress.status</actual>
+            <expected>completed</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>UserProgress.score</actual>
+            <expected>85</expected>
+          </assertion>
+          <assertion type="not_null">
+            <actual>UserProgress.completed_at</actual>
+          </assertion>
+        </then>
+      </scenario>
+      
+      <scenario id="SC-005-006">
+        <name>Завершение курса</name>
+        <description>Когда все модули завершены — курс завершен</description>
+        <anchor ref="PROGRESS_COMPLETE"/>
+        <given>
+          - курс имеет 3 модуля
+          - 2 модуля уже completed
+          - завершается последний модуль
+        </given>
+        <when>mark_module_completed()</when>
+        <then>
+          <assertion type="equal">
+            <actual>CourseEnrollment.completed_at</actual>
+            <expected>not_null</expected>
+          </assertion>
+          <assertion type="equal">
+            <actual>notification_created</actual>
+            <expected>true</expected>
+          </assertion>
+        </then>
+      </scenario>
+    </group>
+    
+    <group level="trajectory">
+      <scenario id="SC-005-101">
+        <name>Проверка лог-маркеров для PROGRESS_GET</name>
+        <anchor ref="PROGRESS_GET"/>
+        <required-log-markers>
+          <marker point="ENTRY">
+            <pattern>[progress][get_user_progress][PROGRESS_GET][ENTRY]</pattern>
+            <must-contain>
+              <field>user_id</field>
+              <field>course_id</field>
+            </must-contain>
+          </marker>
+          <marker point="EXIT">
+            <pattern>[progress][get_user_progress][PROGRESS_GET][EXIT]</pattern>
+            <must-contain>
+              <field>result</field>
+              <field>total_modules</field>
+              <field>completed_modules</field>
+            </must-contain>
+          </marker>
+        </required-log-markers>
+      </scenario>
+      
+      <scenario id="SC-005-102">
+        <name>Проверка лог-маркеров для PROGRESS_UPDATE</name>
+        <anchor ref="PROGRESS_UPDATE"/>
+        <required-log-markers>
+          <marker point="ENTRY">
+            <pattern>[progress][update_module_progress][PROGRESS_UPDATE][ENTRY]</pattern>
+            <must-contain>
+              <field>user_id</field>
+              <field>module_id</field>
+              <field>new_status</field>
+            </must-contain>
+          </marker>
+          <marker point="EXIT">
+            <pattern>[progress][update_module_progress][PROGRESS_UPDATE][EXIT]</pattern>
+            <must-contain>
+              <field>result</field>
+            </must-contain>
+          </marker>
+        </required-log-markers>
+      </scenario>
+      
+      <scenario id="SC-005-103">
+        <name>Проверка лог-маркеров для PROGRESS_COMPLETE</name>
+        <anchor ref="PROGRESS_COMPLETE"/>
+        <required-log-markers>
+          <marker point="ENTRY">
+            <pattern>[progress][mark_module_completed][PROGRESS_COMPLETE][ENTRY]</pattern>
+            <must-contain>
+              <field>user_id</field>
+              <field>module_id</field>
+            </must-contain>
+          </marker>
+          <marker point="STATE_CHANGE">
+            <pattern>[progress][mark_module_completed][PROGRESS_COMPLETE][STATE_CHANGE]</pattern>
+            <must-contain>
+              <field>entity</field>
+              <field>from</field>
+              <field>to</field>
+            </must-contain>
+          </marker>
+          <marker point="EXIT">
+            <pattern>[progress][mark_module_completed][PROGRESS_COMPLETE][EXIT]</pattern>
+            <must-contain>
+              <field>result</field>
+              <field>score</field>
+            </must-contain>
+          </marker>
+        </required-log-markers>
+      </scenario>
+    </group>
+    
+    <group level="integration">
+      <scenario id="SC-005-201">
+        <name>E2E: Просмотр прогресса обучения</name>
+        <description>Пользователь просматривает свой прогресс</description>
+        <steps>
+          <step order="1">
+            <action>Пользователь открывает страницу "Мой прогресс"</action>
+            <expected>Отображается список курсов</expected>
+          </step>
+          <step order="2">
+            <action>Загружаются данные прогресса</action>
+            <expected>GET /api/progress/ возвращает данные</expected>
+            <verify-markers>
+              <marker ref="SC-005-101"/>
+            </verify-markers>
+          </step>
+          <step order="3">
+            <action>Отображается прогресс по каждому модулю</action>
+            <expected>Статусы: not_started, in_progress, completed</expected>
+          </step>
+          <step order="4">
+            <action>Отображается общий прогресс курса</action>
+            <expected>Процент завершения</expected>
+          </step>
+        </steps>
+      </scenario>
+    </group>
+    
+  </test-scenarios>
+  
+  <recommendations>
+    <recommendation priority="medium">
+      Добавить интеграционные тесты в test-plan для полноты.
+    </recommendation>
+  </recommendations>
+  
+</validation-report>

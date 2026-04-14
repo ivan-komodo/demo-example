@@ -4,7 +4,7 @@
   Файл-источник правды для навигации LLM-агентов.
   Обновлять при каждом существенном изменении архитектуры.
 -->
-<semantic-graph version="1.0" last-updated="2026-03-24">
+<semantic-graph version="1.1" last-updated="2026-04-14">
 
   <!-- ============================================ -->
   <!-- META: Продукт, назначение, ограничения      -->
@@ -78,9 +78,33 @@
       </consumes>
     </component>
 
+    <!-- USERS: Детальные сервисы FEAT-001 -->
+    <component id="backend.apps.users.services" kind="service" path="lms-system/backend/apps/users/services.py">
+      <role>Бизнес-логика аутентификации JWT</role>
+      <depends-on ref="backend.apps.users"/>
+      <exposes>
+        <api name="register_user" type="function" anchor="USER_REGISTER">Регистрация пользователя админом</api>
+        <api name="authenticate_user" type="function" anchor="AUTH_LOGIN">Логин с JWT токенами</api>
+        <api name="refresh_tokens" type="function" anchor="AUTH_REFRESH">Обновление токенов</api>
+        <api name="logout_user" type="function" anchor="AUTH_LOGOUT">Отзыв refresh токена</api>
+        <api name="verify_token" type="function" anchor="JWT_VERIFY">Проверка access токена</api>
+      </exposes>
+    </component>
+
+    <component id="frontend.auth" kind="module" path="lms-system/frontend/js/auth.js">
+      <role>Управление аутентификацией на клиенте (FEAT-001)</role>
+      <depends-on ref="frontend.api"/>
+      <exposes>
+        <api name="AuthManager.login" type="function">Логин пользователя</api>
+        <api name="AuthManager.logout" type="function">Логаут пользователя</api>
+        <api name="AuthManager.refresh" type="function">Обновление токена</api>
+        <api name="AuthManager.isAuthenticated" type="function">Проверка авторизации</api>
+      </exposes>
+    </component>
+
     <!-- === COURSES APP === -->
     <component id="backend.apps.courses" kind="django-app" path="lms-system/backend/apps/courses">
-      <role>Управление курсами и модулями</role>
+      <role>Управление курсами и модулями (FEAT-003)</role>
       <depends-on ref="backend.apps.users"/>
       <exposes>
         <api name="models.Course" type="model">Курс (draft/published/archived)</api>
@@ -93,9 +117,23 @@
       </exposes>
     </component>
 
+    <component id="backend.apps.courses.services" kind="service" path="lms-system/backend/apps/courses/services.py">
+      <role>Бизнес-логика курсов и модулей (FEAT-003)</role>
+      <depends-on ref="backend.apps.courses"/>
+      <exposes>
+        <api name="create_course" type="function" anchor="COURSE_CREATE">Создание курса</api>
+        <api name="update_course" type="function" anchor="COURSE_UPDATE">Обновление курса</api>
+        <api name="delete_course" type="function" anchor="COURSE_DELETE">Удаление курса</api>
+        <api name="publish_course" type="function" anchor="COURSE_PUBLISH">Публикация</api>
+        <api name="archive_course" type="function" anchor="COURSE_ARCHIVE">Архивация</api>
+        <api name="create_module" type="function" anchor="MODULE_CREATE">Создание модуля</api>
+        <api name="enroll_user" type="function" anchor="COURSE_ENROLL">Запись на курс</api>
+      </exposes>
+    </component>
+
     <!-- === QUIZZES APP === -->
     <component id="backend.apps.quizzes" kind="django-app" path="lms-system/backend/apps/quizzes">
-      <role>Тесты и попытки прохождения</role>
+      <role>Тесты и попытки прохождения (FEAT-004)</role>
       <depends-on ref="backend.apps.courses"/>
       <depends-on ref="backend.apps.users"/>
       <exposes>
@@ -109,9 +147,20 @@
       </exposes>
     </component>
 
+    <component id="backend.apps.quizzes.services" kind="service" path="lms-system/backend/apps/quizzes/services.py">
+      <role>Бизнес-логика тестов и попыток (FEAT-004)</role>
+      <depends-on ref="backend.apps.quizzes"/>
+      <exposes>
+        <api name="create_quiz" type="function" anchor="QUIZ_CREATE">Создание вопроса</api>
+        <api name="start_attempt" type="function" anchor="QUIZ_ATTEMPT_START">Начало попытки</api>
+        <api name="submit_attempt" type="function" anchor="QUIZ_ATTEMPT_SUBMIT">Отправка ответов</api>
+        <api name="calculate_score" type="function" anchor="QUIZ_SCORE_CALC">Расчёт баллов</api>
+      </exposes>
+    </component>
+
     <!-- === PROGRESS APP === -->
     <component id="backend.apps.progress" kind="django-app" path="lms-system/backend/apps/progress">
-      <role>Отслеживание прогресса пользователей</role>
+      <role>Отслеживание прогресса пользователей (FEAT-005)</role>
       <depends-on ref="backend.apps.courses"/>
       <depends-on ref="backend.apps.users"/>
       <exposes>
@@ -121,9 +170,18 @@
       </exposes>
     </component>
 
+    <component id="backend.apps.progress.services" kind="service" path="lms-system/backend/apps/progress/services.py">
+      <role>Бизнес-логика отслеживания прогресса (FEAT-005)</role>
+      <exposes>
+        <api name="get_user_progress" type="function" anchor="PROGRESS_GET">Получение прогресса</api>
+        <api name="update_module_progress" type="function" anchor="PROGRESS_UPDATE">Обновление модуля</api>
+        <api name="mark_module_completed" type="function" anchor="PROGRESS_COMPLETE">Завершение модуля</api>
+      </exposes>
+    </component>
+
     <!-- === BOOKINGS APP === -->
     <component id="backend.apps.bookings" kind="django-app" path="lms-system/backend/apps/bookings">
-      <role>Бронирование ресурсов (аудитории, тренеры, оборудование)</role>
+      <role>Бронирование ресурсов (FEAT-006)</role>
       <depends-on ref="backend.apps.users"/>
       <depends-on ref="backend.apps.courses"/>
       <exposes>
@@ -135,14 +193,30 @@
       </exposes>
     </component>
 
+    <component id="backend.apps.bookings.services" kind="service" path="lms-system/backend/apps/bookings/services.py">
+      <role>Бизнес-логика бронирования (FEAT-006)</role>
+      <exposes>
+        <api name="create_booking" type="function" anchor="BOOKING_CREATE">Создание бронирования</api>
+        <api name="cancel_booking" type="function" anchor="BOOKING_CANCEL">Отмена бронирования</api>
+      </exposes>
+    </component>
+
     <!-- === NOTIFICATIONS APP === -->
     <component id="backend.apps.notifications" kind="django-app" path="lms-system/backend/apps/notifications">
-      <role>Система уведомлений пользователей</role>
+      <role>Система уведомлений пользователей (FEAT-007)</role>
       <depends-on ref="backend.apps.users"/>
       <exposes>
         <api name="models.Notification" type="model">Уведомление пользователя</api>
         <api name="views.NotificationViewSet" type="viewset">CRUD уведомлений</api>
         <api name="services.NotificationService" type="service">Создание и отправка уведомлений</api>
+      </exposes>
+    </component>
+
+    <component id="backend.apps.notifications.services" kind="service" path="lms-system/backend/apps/notifications/services.py">
+      <role>Бизнес-логика уведомлений (FEAT-007)</role>
+      <exposes>
+        <api name="create_notification" type="function" anchor="NOTIFICATION_CREATE">Создание уведомления</api>
+        <api name="mark_as_read" type="function" anchor="NOTIFICATION_MARK_READ">Отметка прочитанным</api>
       </exposes>
     </component>
 
@@ -189,6 +263,93 @@
       </exposes>
     </component>
 
+    <!-- === GRACE METHODOLOGY === -->
+    <component id="grace" kind="methodology" path=".kilo">
+      <role>GRACE Methodology: Generic Rule-based Architecture for Contracted Execution</role>
+      <exposes>
+        <api name="agents" type="directory">AI Agents for GRACE workflow</api>
+        <api name="skills" type="directory">GRACE Skills</api>
+        <api name="templates" type="directory">Artifact Templates</api>
+      </exposes>
+    </component>
+
+    <component id="grace.agents" kind="package" path=".kilo/agent">
+      <role>GRACE AI Agents for different stages of development</role>
+      <depends-on ref="grace"/>
+      <exposes>
+        <api name="implementer" type="agent">Code generation with semantic markup</api>
+        <api name="contract-reviewer" type="agent">Contract validation agent</api>
+        <api name="verification-reviewer" type="agent">Test execution agent</api>
+        <api name="fixer" type="agent">Bug fixing agent</api>
+      </exposes>
+    </component>
+
+    <component id="grace.skills" kind="package" path=".kilo/skill">
+      <role>GRACE Skills for methodology execution</role>
+      <depends-on ref="grace"/>
+      <exposes>
+        <api name="grace-init" type="skill">Project initialization</api>
+        <api name="grace-plan" type="skill">Feature planning</api>
+        <api name="grace-validate-plan" type="skill">Plan validation</api>
+        <api name="grace-execute" type="skill">Code generation</api>
+        <api name="grace-verification" type="skill">Test execution</api>
+        <api name="grace-fix" type="skill">Bug fixing</api>
+      </exposes>
+    </component>
+
+    <component id="grace.templates" kind="package" path=".kilo/templates">
+      <role>Templates for GRACE artifacts</role>
+      <depends-on ref="grace"/>
+      <exposes>
+        <api name="feature-spec-template.md" type="template">Feature Specification template</api>
+        <api name="validation-report-template.xml" type="template">Validation Report template</api>
+        <api name="test-plan-template.md" type="template">Test Plan template</api>
+      </exposes>
+    </component>
+
+    <component id="grace.artifacts" kind="package" path=".kilo/artifacts">
+      <role>GRACE artifacts documentation</role>
+      <depends-on ref="grace"/>
+      <exposes>
+        <api name="README.md" type="doc">Artifacts documentation</api>
+      </exposes>
+    </component>
+
+    <component id="grace.rules" kind="package" path=".kilocode/rules">
+      <role>GRACE methodology rules</role>
+      <depends-on ref="grace"/>
+      <exposes>
+        <api name="semantic-code-markup.md" type="rule">Semantic markup rules</api>
+        <api name="ai-logging.md" type="rule">AI-friendly logging rules</api>
+        <api name="semantic-graph-xml.md" type="rule">Semantic graph format</api>
+      </exposes>
+    </component>
+
+    <component id="grace.plans" kind="package" path="plans">
+      <role>GRACE planning artifacts</role>
+      <depends-on ref="grace"/>
+      <exposes>
+        <api name="features/" type="directory">Feature Specifications</api>
+        <api name="validation/" type="directory">Validation Reports</api>
+        <api name="FEAT-001" type="feature">Аутентификация и регистрация</api>
+        <api name="FEAT-002" type="feature">Восстановление пароля</api>
+        <api name="FEAT-003" type="feature">Управление курсами и модулями</api>
+        <api name="FEAT-004" type="feature">Тесты и попытки прохождения</api>
+        <api name="FEAT-005" type="feature">Отслеживание прогресса</api>
+        <api name="FEAT-006" type="feature">Бронирование ресурсов</api>
+        <api name="FEAT-007" type="feature">Система уведомлений</api>
+      </exposes>
+    </component>
+
+    <component id="grace.reports" kind="package" path="reports">
+      <role>GRACE execution reports</role>
+      <depends-on ref="grace"/>
+      <exposes>
+        <api name="verification-*.md" type="report">Verification Reports</api>
+        <api name="fix-*.md" type="report">Fix Reports</api>
+      </exposes>
+    </component>
+
   </components>
 
   <!-- ============================================ -->
@@ -196,12 +357,28 @@
   <!-- ============================================ -->
   <relationships>
 
-    <!-- API Endpoints -->
-    <edge id="api.auth" from="frontend.api" to="backend.apps.users" kind="http-rest">
-      <endpoint>/api/auth/</endpoint>
-      <methods>POST (login, register, refresh), POST (logout)</methods>
+    <!-- API Endpoints: Auth (FEAT-001) -->
+    <edge id="api.auth.register" from="frontend.auth" to="backend.apps.users.views.AuthViewSet" kind="http-rest">
+      <endpoint>POST /api/auth/register/</endpoint>
+      <description>Регистрация пользователя (только admin)</description>
     </edge>
 
+    <edge id="api.auth.login" from="frontend.auth" to="backend.apps.users.views.AuthViewSet" kind="http-rest">
+      <endpoint>POST /api/auth/login/</endpoint>
+      <description>Аутентификация, возвращает JWT токены</description>
+    </edge>
+
+    <edge id="api.auth.refresh" from="frontend.auth" to="backend.apps.users.views.AuthViewSet" kind="http-rest">
+      <endpoint>POST /api/auth/refresh/</endpoint>
+      <description>Обновление access/refresh токенов</description>
+    </edge>
+
+    <edge id="api.auth.logout" from="frontend.auth" to="backend.apps.users.views.AuthViewSet" kind="http-rest">
+      <endpoint>POST /api/auth/logout/</endpoint>
+      <description>Отзыв refresh токена</description>
+    </edge>
+
+    <!-- API Endpoints: Other modules -->
     <edge id="api.courses" from="frontend.api" to="backend.apps.courses" kind="http-rest">
       <endpoint>/api/courses/</endpoint>
       <methods>GET, POST, PUT, PATCH, DELETE</methods>
@@ -265,6 +442,31 @@
     <edge id="fe.main-auth" from="frontend.main" to="frontend.auth" kind="import"/>
     <edge id="fe.auth-api" from="frontend.auth" to="frontend.api" kind="import"/>
 
+    <!-- GRACE Workflow -->
+    <edge id="grace.init-project" from="grace.skills" to="grace.rules" kind="skill-uses">
+      <description>grace-init creates rules structure</description>
+    </edge>
+
+    <edge id="grace.plan-to-spec" from="grace.skills" to="grace.plans" kind="skill-generates">
+      <description>grace-plan generates Feature Spec</description>
+    </edge>
+
+    <edge id="grace.validate-to-report" from="grace.skills" to="grace.plans" kind="skill-generates">
+      <description>grace-validate-plan generates Validation Report</description>
+    </edge>
+
+    <edge id="grace.execute-to-code" from="grace.agents" to="backend.apps" kind="agent-generates">
+      <description>implementer generates backend code</description>
+    </edge>
+
+    <edge id="grace.verification-to-report" from="grace.agents" to="grace.reports" kind="agent-generates">
+      <description>verification-reviewer generates Verification Report</description>
+    </edge>
+
+    <edge id="grace.fix-to-code" from="grace.agents" to="backend.apps" kind="agent-modifies">
+      <description>fixer modifies backend code</description>
+    </edge>
+
   </relationships>
 
   <!-- ============================================ -->
@@ -302,6 +504,29 @@
         <step order="4" component="frontend.api">POST /api/quizzes/{id}/submit/</step>
         <step order="5" component="backend.apps.quizzes.services">Проверка ответов, расчёт score</step>
         <step order="6" component="backend.apps.progress.services">Обновление UserProgress</step>
+      </steps>
+    </flow>
+
+    <flow id="grace-feature-flow">
+      <description>GRACE Feature Development Workflow</description>
+      <steps>
+        <step order="1" component="grace.skills">grace-init: Initialize project structure</step>
+        <step order="2" component="grace.skills">grace-plan: Create Feature Spec in plans/features/</step>
+        <step order="3" component="grace.skills">grace-validate-plan: Generate Validation Report in plans/validation/</step>
+        <step order="4" component="grace.agents">implementer: Generate code with semantic markup</step>
+        <step order="5" component="grace.agents">verification-reviewer: Run tests, check markers</step>
+        <step order="6" component="grace.reports">Generate Verification Report</step>
+      </steps>
+    </flow>
+
+    <flow id="grace-fix-flow">
+      <description>GRACE Bug Fix Workflow</description>
+      <steps>
+        <step order="1" component="grace.reports">Read Verification Report with failures</step>
+        <step order="2" component="grace.agents">fixer: Localize issue through ANCHOR</step>
+        <step order="3" component="grace.agents">fixer: Analyze contract violation</step>
+        <step order="4" component="grace.agents">fixer: Fix code preserving contract semantics</step>
+        <step order="5" component="grace.agents">verification-reviewer: Re-run tests</step>
       </steps>
     </flow>
 
@@ -357,6 +582,26 @@
       <consequences>
         <consequence>Улучшенная навигация для AI-ассистентов</consequence>
         <consequence>Требуется дисциплина при написании кода</consequence>
+      </consequences>
+    </decision>
+
+    <decision id="ADR-005" status="accepted">
+      <title>GRACE Methodology for AI-assisted Development</title>
+      <rationale>
+        Generic Rule-based Architecture for Contracted Execution (GRACE) provides a structured
+        approach to AI-assisted software development:
+        1. Semantic code markup with ANCHOR and contracts
+        2. AI-friendly logging (ENTRY/EXIT/BRANCH/DECISION/ERROR)
+        3. Multi-level testing (deterministic, trajectory, integration)
+        4. Contract-first development (code matches contract, not vice versa)
+        
+        See .kilo/ for implementation: agents, skills, templates.
+      </rationale>
+      <consequences>
+        <consequence>Structured AI-assisted development workflow</consequence>
+        <consequence>Improved code quality through contracts</consequence>
+        <consequence>Better debugging through semantic anchors and log markers</consequence>
+        <consequence>Additional overhead for contract writing</consequence>
       </consequences>
     </decision>
 
